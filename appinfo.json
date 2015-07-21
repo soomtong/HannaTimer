@@ -1,11 +1,11 @@
 {
   "uuid": "c2538e20-884c-4fe2-9f02-fe9649abb3d9",
-  "shortName": "stamp",
-  "longName": "stamp",
-  "companyName": "MakeAwesomeHappen",
+  "shortName": "HannaTimer",
+  "longName": "HannaTimer",
+  "companyName": "Soomtong",
   "versionLabel": "1.0",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt"],
+  "targetPlatforms": ["basalt"],
   "watchapp": {
     "watchface": false
   },
@@ -13,6 +13,19 @@
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+      {
+        "type": "font",
+        "name": "FONT_HANNA_32",
+        "file": "BMHANNA_11yrs.otf",
+        "characterRegex": "[0-9:]"
+      },
+      {
+        "type": "font",
+        "name": "FONT_HANNA_16",
+        "file": "BMHANNA_11yrs.otf",
+        "characterRegex": "[0-9:LapTotal\/]"
+      }
+    ]
   }
 }

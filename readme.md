@@ -11,9 +11,9 @@ edit marker time for custom
  
 ### normal
 
-- prev marker
+- prev marker (todo)
 - set mark (stopwatch laps)
-- next marker (blank if empty)
+- stop this mark, (long click) clear all marker, next marker (blank if empty) (todo)
 
 ### menu
 
@@ -28,3 +28,13 @@ long select each past lap point
 - time up
 - decision
 - time down
+
+### timeline pin
+
+laps list
+
+
+## todo
+
+V1 : simple laps timer
+V2 : add stop watch feature (custom timer with pause)
