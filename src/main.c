@@ -24,8 +24,8 @@ static int32_t lap_counter = 0;
 
 static void draw_active_timer(Layer *layer, GContext* ctx) {
 
-
   static char s_time_buffer[16];
+  static char lap_count_buffer[6];
 
   if (clock_is_24h_style()) {
     strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
@@ -39,58 +39,20 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_context_set_text_color(ctx, GColorBlack);
   graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) { .origin = { 0, 2 }, .size = { 144, 46 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  graphics_context_set_text_color(ctx, GColorBlack);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) { .origin = { 0, 2 }, .size = { 144, 46 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_context_set_text_color(ctx, GColorIslamicGreen);
+  graphics_draw_text(ctx, "Lap", fonts[font_small], (GRect) { .origin = { 0, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-//  layer_set_frame(layer, (GRect) {.origin = {0, 0}, .size = {144, 44}});
-//  text_layer_set_text(active_top_layer, s_time_buffer);
-/*
-  // load time now layer
-  active_top_layer = text_layer_create((GRect) { .origin = { 0, 2 }, .size = { bounds.size.w, 46 } });
-  text_layer_set_text_alignment(active_top_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(active_top_layer, GColorLightGray);
-  text_layer_set_text_color(active_top_layer, GColorBlack);
-  text_layer_set_font(active_top_layer, fonts[font_big]);
+  graphics_context_set_text_color(ctx, GColorVividCerulean);
+  graphics_draw_text(ctx, "Total", fonts[font_small], (GRect) { .origin = { 72, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  layer_add_child(active_layer, text_layer_get_layer(active_top_layer));
 
-  active_mid_left_layer = text_layer_create((GRect) { .origin = { 0, 47 }, .size = { (int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(active_mid_left_layer, "Lap");
-  text_layer_set_text_alignment(active_mid_left_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(active_mid_left_layer, GColorLightGray);
-  text_layer_set_text_color(active_mid_left_layer, GColorDarkGreen);
-  text_layer_set_font(active_mid_left_layer, fonts[font_small]);
+  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
-  layer_add_child(active_layer, text_layer_get_layer(active_mid_left_layer));
+  graphics_context_set_text_color(ctx, GColorDarkGreen);
+  graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], (GRect) { .origin = { 0, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  active_mid_right_layer = text_layer_create((GRect) { .origin = { 72, 47 }, .size = { (int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(active_mid_right_layer, "Total");
-  text_layer_set_text_alignment(active_mid_right_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(active_mid_right_layer, GColorLightGray);
-  text_layer_set_text_color(active_mid_right_layer, GColorIslamicGreen);
-  text_layer_set_font(active_mid_right_layer, fonts[font_small]);
-
-  layer_add_child(active_layer, text_layer_get_layer(active_mid_right_layer));
-
-  active_bottom_left_layer = text_layer_create((GRect) { .origin = { 0, 47 + 24 }, .size = { (int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(active_bottom_left_layer, "3/32");
-  text_layer_set_text_alignment(active_bottom_left_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(active_bottom_left_layer, GColorLightGray);
-  text_layer_set_text_color(active_bottom_left_layer, GColorOxfordBlue);
-  text_layer_set_font(active_bottom_left_layer, fonts[font_small]);
-
-  layer_add_child(active_layer, text_layer_get_layer(active_bottom_left_layer));
-
-  active_bottom_right_layer = text_layer_create((GRect) { .origin = { 72, 47 + 24 }, .size = { (int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(active_bottom_right_layer, "04:23:45");
-  text_layer_set_text_alignment(active_bottom_right_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(active_bottom_right_layer, GColorLightGray);
-  text_layer_set_text_color(active_bottom_right_layer, GColorWindsorTan);
-  text_layer_set_font(active_bottom_right_layer, fonts[font_small]);
-
-  layer_add_child(active_layer, text_layer_get_layer(active_bottom_right_layer));
-*/
-
+  graphics_context_set_text_color(ctx, GColorDukeBlue);
+  graphics_draw_text(ctx, "04:23:45", fonts[font_small], (GRect) { .origin = { 72, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -120,7 +82,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Up button clicked");
 
-  layer_set_frame(active_layer, (GRect) {.origin = {0, 90}, .size = {144, 20}});
+  layer_set_frame(active_layer, (GRect) {.origin = {0, 40}, .size = {144, 44}});
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -149,14 +111,14 @@ static void window_load(Window *window) {
   GRect bounds = layer_get_bounds(window_layer);
 
   // constant
-  const int8_t line_height = 32;
-  const GPoint left_first = (GPoint) {.x = 0, .y = 4};
-  const GPoint right_first = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = 4};
-  const GPoint left_second = (GPoint) {.x = 0, .y = line_height};
-  const GPoint right_second = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = line_height};
+//  const int8_t line_height = 32;
+//  const GPoint left_first = (GPoint) {.x = 0, .y = 4};
+//  const GPoint right_first = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = 4};
+//  const GPoint left_second = (GPoint) {.x = 0, .y = line_height};
+//  const GPoint right_second = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = line_height};
 
   // set up layers
-  prev_layer = layer_create((GRect) {.origin = {0, 0}, .size = {bounds.size.w, line_height * 2}});
+  prev_layer = layer_create((GRect) {.origin = {0, 0}, .size = {bounds.size.w, 32 * 2}});
   next_layer = layer_create((GRect) {.origin = {0, 150}, .size = {bounds.size.w, 56}});
   active_layer = layer_create((GRect) {.origin = {0, 58}, .size = {bounds.size.w, 94}});
 
