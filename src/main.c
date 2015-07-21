@@ -25,7 +25,10 @@ static int32_t lap_counter = 0;
 static void draw_active_timer(Layer *layer, GContext* ctx) {
 
   static char s_time_buffer[16];
+  static char total_laps_buffer[16];
   static char lap_count_buffer[6];
+  time_t total_diff;
+  time_t now = mktime(&s_time);
 
   if (clock_is_24h_style()) {
     strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
@@ -45,14 +48,21 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_context_set_text_color(ctx, GColorVividCerulean);
   graphics_draw_text(ctx, "Total", fonts[font_small], (GRect) { .origin = { 72, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-
   snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], (GRect) { .origin = { 0, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
+  if (stop_pointer[0]) {
+    total_diff = now - stop_pointer[0];
+
+    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%d:%d:%d", (int) ((total_diff / 3600) % 24), (int) ((total_diff / 60) % 60), (int) (total_diff % 60));
+  } else {
+    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%d:%d:%d", 0, 0, 0);
+  }
+
   graphics_context_set_text_color(ctx, GColorDukeBlue);
-  graphics_draw_text(ctx, "04:23:45", fonts[font_small], (GRect) { .origin = { 72, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, total_laps_buffer, fonts[font_small], (GRect) { .origin = { 72, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
