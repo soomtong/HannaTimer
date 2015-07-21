@@ -24,11 +24,14 @@ static int32_t lap_counter = 0;
 
 static void draw_active_timer(Layer *layer, GContext* ctx) {
 
+  struct tm temp_time = s_time;
+
   static char s_time_buffer[16];
   static char total_laps_buffer[16];
   static char lap_count_buffer[6];
+
   time_t total_diff;
-  time_t now = mktime(&s_time);
+  time_t now = mktime(&temp_time);
 
   if (clock_is_24h_style()) {
     strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);

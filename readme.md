@@ -1,4 +1,4 @@
-# stamp
+# HannaTimer
 
 simple stopwatch for time-flow event
 
