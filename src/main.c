@@ -26,8 +26,8 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
 
   struct tm temp_time = s_time;
 
-  static char s_time_buffer[16];
-  static char total_laps_buffer[16];
+  static char s_time_buffer[10];
+  static char total_laps_buffer[10];
   static char lap_count_buffer[6];
 
   time_t total_diff;
@@ -46,22 +46,28 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) { .origin = { 0, 2 }, .size = { 144, 46 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   graphics_context_set_text_color(ctx, GColorIslamicGreen);
-  graphics_draw_text(ctx, "Lap", fonts[font_small], (GRect) { .origin = { 0, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, "LAP", fonts[font_small], (GRect) { .origin = { 0, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  graphics_context_set_text_color(ctx, GColorVividCerulean);
-  graphics_draw_text(ctx, "Total", fonts[font_small], (GRect) { .origin = { 72, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_context_set_text_color(ctx, GColorBlueMoon);
+  graphics_draw_text(ctx, "TOTAL", fonts[font_small], (GRect) { .origin = { 72, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], (GRect) { .origin = { 0, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
+  int hour, min, sec;
+
   if (stop_pointer[0]) {
     total_diff = now - stop_pointer[0];
 
-    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%d:%d:%d", (int) ((total_diff / 3600) % 24), (int) ((total_diff / 60) % 60), (int) (total_diff % 60));
+    hour = (total_diff / 3600) % 24;
+    min = (total_diff / 60) % 60;
+    sec = total_diff % 60;
+
+    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", hour, min, sec);
   } else {
-    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%d:%d:%d", 0, 0, 0);
+    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", 0, 0, 0);
   }
 
   graphics_context_set_text_color(ctx, GColorDukeBlue);
@@ -130,6 +136,13 @@ static void window_load(Window *window) {
 //  const GPoint left_second = (GPoint) {.x = 0, .y = line_height};
 //  const GPoint right_second = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = line_height};
 
+  // load font resource
+  uint32_t resource_id = RESOURCE_ID_FONT_HANNA_32;
+
+  for (uint8_t i = 0; i < fonts_length; ++i) {
+    fonts[i] = fonts_load_custom_font(resource_get_handle(resource_id + i));
+  }
+
   // set up layers
   prev_layer = layer_create((GRect) {.origin = {0, 0}, .size = {bounds.size.w, 32 * 2}});
   next_layer = layer_create((GRect) {.origin = {0, 150}, .size = {bounds.size.w, 56}});
@@ -142,13 +155,6 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, prev_layer);
   layer_add_child(window_layer, next_layer);
   layer_add_child(window_layer, active_layer);
-
-  // load font resource
-  uint32_t resource_id = RESOURCE_ID_FONT_HANNA_32;
-
-  for (uint8_t i = 0; i < fonts_length; ++i) {
-    fonts[i] = fonts_load_custom_font(resource_get_handle(resource_id + i));
-  }
 
   layer_set_update_proc(active_layer, draw_active_timer);
 
