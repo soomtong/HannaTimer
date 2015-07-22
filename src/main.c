@@ -14,8 +14,21 @@ static Layer *prev_layer;
 static Layer *next_layer;
 static Layer *active_layer;
 
-
 static GFont *fonts[fonts_length];
+static GRect bounds;
+
+static const struct GPoint active_layer_origin_normal = {0, 38};
+static const struct GPoint active_layer_origin_upper = {0, 18};
+static const struct GPoint active_layer_origin_lower = {0, 58};
+static const struct GSize active_layer_size = {144, 92};
+static const struct GPoint next_layer_origin_normal = {0, 150};
+static const struct GPoint next_layer_origin_upper = {0, 130};
+static const struct GPoint next_layer_origin_lower = {0, 170};
+static const struct GSize next_layer_size = {144, 92};
+static const struct GPoint prev_layer_origin_normal = {0, 0};
+static const struct GPoint prev_layer_origin_upper = {0, -20};
+static const struct GPoint prev_layer_origin_lower = {0, 20};
+static const struct GSize prev_layer_size = {144, 92};
 
 static struct tm s_time;
 
@@ -23,6 +36,13 @@ static time_t stop_pointer[32];
 static int32_t lap_counter = 0;
 
 static void draw_active_timer(Layer *layer, GContext* ctx) {
+
+  static const struct GRect
+      geo_active_top = {.origin = {0, 2}, .size = {144, 46}},
+      geo_active_text_left = {.origin = {0, 44}, .size = {72, 32}},
+      geo_active_text_right = {.origin = {72, 44}, .size = {72, 32}},
+      geo_active_data_left = {.origin = {0, 65}, .size = {72, 32}},
+      geo_active_data_right = {.origin = {72, 65}, .size = {72, 32}};
 
   struct tm temp_time = s_time;
 
@@ -39,22 +59,24 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
     strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
   }
 
+//  if (layer_get_hidden(layer)) layer_set_hidden(layer, false);
+
   graphics_context_set_fill_color(ctx, GColorLightGray);
-  graphics_fill_rect(ctx, (GRect) {.origin = {0, 0}, .size = {144, 94}}, 0, GCornerNone);
+  graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
 
   graphics_context_set_text_color(ctx, GColorBlack);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) { .origin = { 0, 2 }, .size = { 144, 46 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], geo_active_top, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   graphics_context_set_text_color(ctx, GColorIslamicGreen);
-  graphics_draw_text(ctx, "LAP", fonts[font_small], (GRect) { .origin = { 0, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, "LAP", fonts[font_small], geo_active_text_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   graphics_context_set_text_color(ctx, GColorBlueMoon);
-  graphics_draw_text(ctx, "TOTAL", fonts[font_small], (GRect) { .origin = { 72, 44 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, "TOTAL", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
-  graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], (GRect) { .origin = { 0, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], geo_active_data_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   int hour, min, sec;
 
@@ -71,7 +93,45 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   }
 
   graphics_context_set_text_color(ctx, GColorDukeBlue);
-  graphics_draw_text(ctx, total_laps_buffer, fonts[font_small], (GRect) { .origin = { 72, 65 }, .size = { 72, 32 } }, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, total_laps_buffer, fonts[font_small], geo_active_data_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+}
+
+static void draw_prev_timer(Layer *layer, GContext* ctx) {
+
+  struct GSize prev_layer_size = {72, 32};
+  struct GRect
+      geo_prev_data1_left = {.origin = {0, 7}, prev_layer_size},
+      geo_prev_data1_right = {.origin = {72, 7}, prev_layer_size},
+      geo_prev_data3_left = {.origin = {0, 3}, prev_layer_size},
+      geo_prev_data3_right = {.origin = {72, 3}, prev_layer_size},
+      geo_prev_data2_left = {.origin = {0, 32}, prev_layer_size},
+      geo_prev_data2_right = {.origin = {72, 32}, prev_layer_size};
+
+  graphics_context_set_fill_color(ctx, GColorDarkGray);
+  graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
+
+  if (lap_counter == 1) {
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, "02:10:00", fonts[font_small], geo_prev_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_context_set_text_color(ctx, GColorLightGray);
+    graphics_draw_text(ctx, "01:20:00", fonts[font_small], geo_prev_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+  } else if (lap_counter > 1) {
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, "02:10:00", fonts[font_small], geo_prev_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_context_set_text_color(ctx, GColorLightGray);
+    graphics_draw_text(ctx, "01:20:00", fonts[font_small], geo_prev_data3_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    graphics_context_set_stroke_color(ctx, GColorLightGray);
+    graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
+
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, "02:10:00", fonts[font_small], geo_prev_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_context_set_text_color(ctx, GColorLightGray);
+    graphics_draw_text(ctx, "01:20:00", fonts[font_small], geo_prev_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    layer_set_frame(active_layer, (GRect) { .origin = active_layer_origin_lower, .size = active_layer_size });
+   }
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -101,13 +161,17 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Up button clicked");
 
-  layer_set_frame(active_layer, (GRect) {.origin = {0, 40}, .size = {144, 44}});
+  layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
+  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_lower, .size = next_layer_size});
+  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_lower, .size = prev_layer_size});
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  // stop this timer and save to array
-//  text_layer_set_text(previous_left_layer, "Go Next Lap");
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Down button clicked");
+
+  layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
+  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_upper, .size = next_layer_size});
+  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_upper, .size = prev_layer_size});
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -116,6 +180,10 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
 
   lap_counter = 0;
   stop_pointer[0] = 0;
+
+  layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
+  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
+  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_normal, .size = prev_layer_size});
 }
 
 static void click_config_provider(void *context) {
@@ -127,14 +195,7 @@ static void click_config_provider(void *context) {
 
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-
-  // constant
-//  const int8_t line_height = 32;
-//  const GPoint left_first = (GPoint) {.x = 0, .y = 4};
-//  const GPoint right_first = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = 4};
-//  const GPoint left_second = (GPoint) {.x = 0, .y = line_height};
-//  const GPoint right_second = (GPoint) {.x = (int16_t) (bounds.size.w / 2), .y = line_height};
+  bounds = layer_get_bounds(window_layer);
 
   // load font resource
   uint32_t resource_id = RESOURCE_ID_FONT_HANNA_32;
@@ -144,58 +205,30 @@ static void window_load(Window *window) {
   }
 
   // set up layers
-  prev_layer = layer_create((GRect) {.origin = {0, 0}, .size = {bounds.size.w, 32 * 2}});
-  next_layer = layer_create((GRect) {.origin = {0, 150}, .size = {bounds.size.w, 56}});
-  active_layer = layer_create((GRect) {.origin = {0, 58}, .size = {bounds.size.w, 94}});
+  prev_layer = layer_create((GRect) {.origin = prev_layer_origin_normal, .size = prev_layer_size});
+  next_layer = layer_create((GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
+  active_layer = layer_create((GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
 
-//  layer_set_hidden(prev_layer, true);
-//  layer_set_hidden(next_layer, true);
-//  layer_set_hidden(active_layer, true);
+  layer_set_hidden(prev_layer, true);
+  layer_set_hidden(next_layer, true);
+  layer_set_hidden(active_layer, true);
 
   layer_add_child(window_layer, prev_layer);
   layer_add_child(window_layer, next_layer);
   layer_add_child(window_layer, active_layer);
 
   layer_set_update_proc(active_layer, draw_active_timer);
+  layer_set_update_proc(prev_layer, draw_prev_timer);
+
+  layer_set_hidden(prev_layer, false);
+  layer_set_hidden(next_layer, false);
+  layer_set_hidden(active_layer, false);
+
 
 /*
 
   // load prev layer
-  previous_left_layer = text_layer_create((GRect) {left_first, .size = {(int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(previous_left_layer, "02:10:00");
-  text_layer_set_text_alignment(previous_left_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(previous_left_layer, GColorDarkGray);
-  text_layer_set_text_color(previous_left_layer, GColorWhite);
-  text_layer_set_font(previous_left_layer, fonts[font_small]);
 
-  layer_add_child(prev_layer, text_layer_get_layer(previous_left_layer));
-
-  previous_right_layer = text_layer_create((GRect) {right_first, .size = {(int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(previous_right_layer, "01:20:00");
-  text_layer_set_text_alignment(previous_right_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(previous_right_layer, GColorDarkGray);
-  text_layer_set_text_color(previous_right_layer, GColorLightGray);
-  text_layer_set_font(previous_right_layer, fonts[font_small]);
-
-  layer_add_child(prev_layer, text_layer_get_layer(previous_right_layer));
-
-  previous_left_layer = text_layer_create((GRect) { left_second, .size = {(int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(previous_left_layer, "03:30:00");
-  text_layer_set_text_alignment(previous_left_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(previous_left_layer, GColorDarkGray);
-  text_layer_set_text_color(previous_left_layer, GColorWhite);
-  text_layer_set_font(previous_left_layer, fonts[font_small]);
-
-  layer_add_child(prev_layer, text_layer_get_layer(previous_left_layer));
-
-  previous_right_layer = text_layer_create((GRect) { right_second, .size = {(int16_t) (bounds.size.w / 2), line_height } });
-  text_layer_set_text(previous_right_layer, "00:44:23");
-  text_layer_set_text_alignment(previous_right_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(previous_right_layer, GColorDarkGray);
-  text_layer_set_text_color(previous_right_layer, GColorLightGray);
-  text_layer_set_font(previous_right_layer, fonts[font_small]);
-
-  layer_add_child(prev_layer, text_layer_get_layer(previous_right_layer));
 
   // load next layer
   next_left_layer = text_layer_create((GRect) { .origin = { 0, 0 }, .size = { (int16_t) (bounds.size.w / 2), 18 } });
