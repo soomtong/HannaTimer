@@ -366,7 +366,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (lap_counter > 1) active_flag = 1;
 
-  // move active layer by condition
   set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
@@ -393,7 +392,6 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
 
-  // move active layer by condition
   set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
@@ -416,7 +414,6 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
 
-  // move active layer by condition
   set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
@@ -464,9 +461,9 @@ static void window_load(Window *window) {
   next_layer = layer_create((GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
   active_layer = layer_create((GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
 
-//  layer_set_hidden(prev_layer, true);
-//  layer_set_hidden(next_layer, true);
-//  layer_set_hidden(active_layer, true);
+  layer_set_hidden(prev_layer, true);
+  layer_set_hidden(next_layer, true);
+  layer_set_hidden(active_layer, true);
 
   layer_add_child(window_layer, prev_layer);
   layer_add_child(window_layer, next_layer);
@@ -476,9 +473,9 @@ static void window_load(Window *window) {
   layer_set_update_proc(prev_layer, draw_prev_timer);
   layer_set_update_proc(next_layer, draw_next_timer);
 
-//  layer_set_hidden(prev_layer, false);
-//  layer_set_hidden(next_layer, false);
-//  layer_set_hidden(active_layer, false);
+  layer_set_hidden(prev_layer, false);
+  layer_set_hidden(next_layer, false);
+  layer_set_hidden(active_layer, false);
 
   if (lap_counter > 1) active_flag = 1;
 
