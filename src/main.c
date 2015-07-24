@@ -17,26 +17,29 @@ static Layer *active_layer;
 static GFont *fonts[fonts_length];
 static GRect bounds;
 
-static const struct GPoint active_layer_origin_normal = {0, 38};
+//static const struct GPoint prev_layer_origin_upper = {0, -20};
+static const struct GPoint prev_layer_origin_normal = {0, 0};
+//static const struct GPoint prev_layer_origin_lower = {0, 20};
+static const struct GSize prev_layer_size = {144, 92};
 static const struct GPoint active_layer_origin_upper = {0, 18};
+static const struct GPoint active_layer_origin_normal = {0, 38};
 static const struct GPoint active_layer_origin_lower = {0, 58};
 static const struct GSize active_layer_size = {144, 92};
-static const struct GPoint next_layer_origin_normal = {0, 150};
-static const struct GPoint next_layer_origin_upper = {0, 130};
-static const struct GPoint next_layer_origin_lower = {0, 170};
+//static const struct GPoint next_layer_origin_upper = {0, 130};
+static const struct GPoint next_layer_origin_normal = {0, 130};
+//static const struct GPoint next_layer_origin_lower = {0, 170};
 static const struct GSize next_layer_size = {144, 92};
-static const struct GPoint prev_layer_origin_normal = {0, 0};
-static const struct GPoint prev_layer_origin_upper = {0, -20};
-static const struct GPoint prev_layer_origin_lower = {0, 20};
-static const struct GSize prev_layer_size = {144, 92};
 
 static struct tm s_time;
 
 static time_t stop_pointer[32];
 static uint8_t lap_counter = 0;
 static uint8_t pick_counter = 0;
+static int8_t active_flag = 0;  // -1 : upper, 0 : normal, 1 : lower
 
 static void draw_active_timer(Layer *layer, GContext* ctx) {
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Called Active Layer Proc");
+
   // declare vars and set geometry
   time_t stop_time;
   time_t diff_time;
@@ -46,13 +49,13 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   char s_time_buffer[10];
   char lap_count_buffer[6];
 
-  const struct GSize active_layer_size = {(int16_t) (bounds.size.w / 2), 32};
+  const struct GSize geo_active_layer_size = {(int16_t) (bounds.size.w / 2), 32};
   const struct GRect
       geo_active_top = {.origin = {bounds.origin.x, 2}, .size = {bounds.size.w, 46}},
-      geo_active_text_left = {.origin = {bounds.origin.x, 44}, active_layer_size},
-      geo_active_text_right = {.origin = {(int16_t) (bounds.size.w / 2), 44}, active_layer_size},
-      geo_active_data_left = {.origin = {bounds.origin.x, 65}, active_layer_size},
-      geo_active_data_right = {.origin = {(int16_t) (bounds.size.w / 2), 65}, active_layer_size};
+      geo_active_text_left = {.origin = {bounds.origin.x, 44}, geo_active_layer_size},
+      geo_active_text_right = {.origin = {(int16_t) (bounds.size.w / 2), 44}, geo_active_layer_size},
+      geo_active_data_left = {.origin = {bounds.origin.x, 65}, geo_active_layer_size},
+      geo_active_data_right = {.origin = {(int16_t) (bounds.size.w / 2), 65}, geo_active_layer_size};
 
   // fill background and set title
   graphics_context_set_fill_color(ctx, GColorLightGray);
@@ -99,9 +102,26 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
 
   graphics_context_set_text_color(ctx, GColorDukeBlue);
   graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_active_data_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+  // move active layer by condition
+  switch (active_flag) {
+    case -1:
+      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
+      break;
+    case 0:
+      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
+      break;
+    case 1:
+      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
+      break;
+    default:
+      break;
+  }
 }
 
 static void draw_prev_timer(Layer *layer, GContext* ctx) {
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Called Prev Layer Proc");
+
   // declare vars and set geometry
   time_t stop_time;
   time_t diff_time;
@@ -111,21 +131,21 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
   char s_time_buffer[10];
   char lap_time_buffer[10];
 
-  struct GSize prev_layer_size = {(int16_t) (bounds.size.w / 2), 32};
+  struct GSize geo_prev_layer_size = {(int16_t) (bounds.size.w / 2), 32};
   struct GRect
-      geo_prev_data1_left = {.origin = {bounds.origin.x, 7}, prev_layer_size},
-      geo_prev_data1_right = {.origin = {(int16_t) (bounds.size.w / 2), 7}, prev_layer_size},
-      geo_prev_data3_left = {.origin = {bounds.origin.x, 3}, prev_layer_size},
-      geo_prev_data3_right = {.origin = {(int16_t) (bounds.size.w / 2), 3}, prev_layer_size},
-      geo_prev_data2_left = {.origin = {bounds.origin.x, 32}, prev_layer_size},
-      geo_prev_data2_right = {.origin = {(int16_t) (bounds.size.w / 2), 32}, prev_layer_size};
+      geo_prev_data1_left = {.origin = {bounds.origin.x, 7}, geo_prev_layer_size},
+      geo_prev_data1_right = {.origin = {(int16_t) (bounds.size.w / 2), 7}, geo_prev_layer_size},
+      geo_prev_data3_left = {.origin = {bounds.origin.x, 3}, geo_prev_layer_size},
+      geo_prev_data3_right = {.origin = {(int16_t) (bounds.size.w / 2), 3}, geo_prev_layer_size},
+      geo_prev_data2_left = {.origin = {bounds.origin.x, 32}, geo_prev_layer_size},
+      geo_prev_data2_right = {.origin = {(int16_t) (bounds.size.w / 2), 32}, geo_prev_layer_size};
 
   // fill background
   graphics_context_set_fill_color(ctx, GColorDarkGray);
   graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
 
   // draw prev point
-  if (lap_counter == 1) {
+  if (lap_counter == 1 && pick_counter != 1) {
 
     stop_time = stop_pointer[1];
     s_time = *localtime(&stop_time);
@@ -179,6 +199,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
     // horizon line
     graphics_context_set_stroke_color(ctx, GColorLightGray); graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
 
+    // draw second prev point
     stop_time = stop_pointer[lap_counter];
     s_time = *localtime(&stop_time);
 
@@ -197,10 +218,116 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 
     graphics_context_set_text_color(ctx, GColorLightGray);
     graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
 
-    // reset prev layer frame
-    layer_set_frame(active_layer, (GRect) { .origin = active_layer_origin_lower, .size = active_layer_size });
-   }
+  // set prev layer
+//  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_normal, .size = prev_layer_size});
+}
+
+static void draw_next_timer(Layer *layer, GContext* ctx) {
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Called Next Layer Proc");
+
+  // declare vars and set geometry
+  time_t stop_time;
+  time_t diff_time;
+
+  int hour, min, sec;
+
+  char s_time_buffer[10];
+  char lap_time_buffer[10];
+
+  struct GSize geo_next_layer_size = {(int16_t) (bounds.size.w / 2), 32};
+  struct GRect
+      geo_next_data1_left = {.origin = {bounds.origin.x, 7}, geo_next_layer_size},
+      geo_next_data1_right = {.origin = {(int16_t) (bounds.size.w / 2), 7}, geo_next_layer_size},
+      geo_next_data3_left = {.origin = {bounds.origin.x, 3}, geo_next_layer_size},
+      geo_next_data3_right = {.origin = {(int16_t) (bounds.size.w / 2), 3}, geo_next_layer_size},
+      geo_next_data2_left = {.origin = {bounds.origin.x, 32}, geo_next_layer_size},
+      geo_next_data2_right = {.origin = {(int16_t) (bounds.size.w / 2), 32}, geo_next_layer_size};
+
+  // fill background
+  graphics_context_set_fill_color(ctx, GColorDarkGray);
+  graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
+
+  // draw next point
+  if (lap_counter && (lap_counter - pick_counter == 0)) {
+
+    stop_time = stop_pointer[0];
+    s_time = *localtime(&stop_time);
+
+    if (clock_is_24h_style()) {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+    } else {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+    }
+
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    diff_time = stop_pointer[0] - stop_pointer[1];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
+
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+
+    graphics_context_set_text_color(ctx, GColorLightGray);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+  }
+  /*else if (lap_counter - pick_counter > 1) {
+
+    // draw first next point
+    stop_time = stop_pointer[lap_counter - 1];
+    s_time = *localtime(&stop_time);
+
+    if (clock_is_24h_style()) {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+    } else {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+    }
+
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    diff_time = stop_pointer[lap_counter] - stop_pointer[lap_counter - 1];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
+
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+
+    graphics_context_set_text_color(ctx, GColorLightGray);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data3_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    // horizon line
+    graphics_context_set_stroke_color(ctx, GColorLightGray); graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
+
+    // draw second next point
+    stop_time = stop_pointer[0];
+    s_time = *localtime(&stop_time);
+
+    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+
+    graphics_context_set_text_color(ctx, GColorWhite);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
+    diff_time = stop_pointer[0] - stop_pointer[lap_counter];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
+
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+
+    graphics_context_set_text_color(ctx, GColorLightGray);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }*/
+
+  // set next layer
+//  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -209,6 +336,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   stop_pointer[0] = mktime(&s_time);
 
   // update screen
+  layer_mark_dirty(prev_layer);
+  layer_mark_dirty(next_layer);
   layer_mark_dirty(active_layer);
 }
 
@@ -225,6 +354,12 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   for (int i = 0; i < lap_counter; ++i) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
   }
+
+  if (lap_counter > 1) active_flag = 1;
+
+//  layer_mark_dirty(prev_layer);
+//  layer_mark_dirty(next_layer);
+  layer_mark_dirty(active_layer);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -232,14 +367,16 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (pick_counter < lap_counter) pick_counter++;
 
-  if (pick_counter < lap_counter) {
-    // move up active layer
-    layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
-    layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_lower, .size = next_layer_size});
-    layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_lower, .size = prev_layer_size});
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
+  for (int i = 0; i < lap_counter; ++i) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
   }
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
+//  layer_mark_dirty(prev_layer);
+//  layer_mark_dirty(next_layer);
+  layer_mark_dirty(active_layer);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -247,11 +384,16 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (pick_counter > 0) pick_counter--;
 
-  layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
-  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_upper, .size = next_layer_size});
-  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_upper, .size = prev_layer_size});
-
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
+  for (int i = 0; i < lap_counter; ++i) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
+  }
+
+//  layer_mark_dirty(prev_layer);
+//  layer_mark_dirty(next_layer);
+  layer_mark_dirty(active_layer);
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -262,9 +404,11 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
   pick_counter = 0;
   stop_pointer[0] = 0;
 
-  layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
-  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
-  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_normal, .size = prev_layer_size});
+  active_flag = 0;
+
+//  layer_mark_dirty(prev_layer);
+//  layer_mark_dirty(next_layer);
+  layer_mark_dirty(active_layer);
 }
 
 static void click_config_provider(void *context) {
@@ -290,9 +434,9 @@ static void window_load(Window *window) {
   next_layer = layer_create((GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
   active_layer = layer_create((GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
 
-  layer_set_hidden(prev_layer, true);
-  layer_set_hidden(next_layer, true);
-  layer_set_hidden(active_layer, true);
+//  layer_set_hidden(prev_layer, true);
+//  layer_set_hidden(next_layer, true);
+//  layer_set_hidden(active_layer, true);
 
   layer_add_child(window_layer, prev_layer);
   layer_add_child(window_layer, next_layer);
@@ -300,38 +444,13 @@ static void window_load(Window *window) {
 
   layer_set_update_proc(active_layer, draw_active_timer);
   layer_set_update_proc(prev_layer, draw_prev_timer);
+  layer_set_update_proc(next_layer, draw_next_timer);
 
-  layer_set_hidden(prev_layer, false);
-  layer_set_hidden(next_layer, false);
-  layer_set_hidden(active_layer, false);
+//  layer_set_hidden(prev_layer, false);
+//  layer_set_hidden(next_layer, false);
+//  layer_set_hidden(active_layer, false);
 
-
-/*
-
-  // load prev layer
-
-
-  // load next layer
-  next_left_layer = text_layer_create((GRect) { .origin = { 0, 0 }, .size = { (int16_t) (bounds.size.w / 2), 18 } });
-  text_layer_set_text(next_left_layer, "03:30:00");
-  text_layer_set_text_alignment(next_left_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(next_left_layer, GColorBlack);
-  text_layer_set_text_color(next_left_layer, GColorWhite);
-  text_layer_set_font(next_left_layer, fonts[font_small]);
-
-  layer_add_child(next_layer, text_layer_get_layer(next_left_layer));
-
-  next_right_layer = text_layer_create((GRect) { .origin = { 71, 0 }, .size = { (int16_t) (bounds.size.w / 2), 18 } });
-  text_layer_set_text(next_right_layer, "01:20:00");
-  text_layer_set_text_alignment(next_right_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(next_right_layer, GColorBlack);
-  text_layer_set_text_color(next_right_layer, GColorLightGray);
-  text_layer_set_font(next_right_layer, fonts[font_small]);
-
-  layer_add_child(next_layer, text_layer_get_layer(next_right_layer));
-
-
-*/
+  if (lap_counter > 1) active_flag = 1;
 
   // bind tick service
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
