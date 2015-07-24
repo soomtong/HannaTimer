@@ -41,6 +41,8 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "Called Active Layer Proc");
 
   // declare vars and set geometry
+  struct tm now;
+
   time_t stop_time;
   time_t diff_time;
 
@@ -68,12 +70,12 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
 
   // draw active point time
   stop_time = stop_pointer[pick_counter];
-  s_time = *localtime(&stop_time);
+  now = *localtime(&stop_time);
 
   if (clock_is_24h_style()) {
-    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
   } else {
-    strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+    strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &now);
   }
 
   graphics_context_set_text_color(ctx, GColorBlack);
@@ -123,6 +125,8 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "Called Prev Layer Proc");
 
   // declare vars and set geometry
+  struct tm now;
+
   time_t stop_time;
   time_t diff_time;
 
@@ -148,12 +152,12 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
   if (lap_counter == 1 && pick_counter != 1) {
 
     stop_time = stop_pointer[1];
-    s_time = *localtime(&stop_time);
+    now = *localtime(&stop_time);
 
     if (clock_is_24h_style()) {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
     } else {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &now);
     }
 
     graphics_context_set_text_color(ctx, GColorWhite);
@@ -174,12 +178,12 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 
     // draw first prev point
     stop_time = stop_pointer[lap_counter - 1];
-    s_time = *localtime(&stop_time);
+    now = *localtime(&stop_time);
 
     if (clock_is_24h_style()) {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
     } else {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &now);
     }
 
     graphics_context_set_text_color(ctx, GColorWhite);
@@ -201,9 +205,9 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 
     // draw second prev point
     stop_time = stop_pointer[lap_counter];
-    s_time = *localtime(&stop_time);
+    now = *localtime(&stop_time);
 
-    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
 
     graphics_context_set_text_color(ctx, GColorWhite);
     graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -228,6 +232,8 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "Called Next Layer Proc");
 
   // declare vars and set geometry
+  struct tm now;
+
   time_t stop_time;
   time_t diff_time;
 
@@ -253,12 +259,12 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
   if (lap_counter && (lap_counter - pick_counter == 0)) {
 
     stop_time = stop_pointer[0];
-    s_time = *localtime(&stop_time);
+    now = *localtime(&stop_time);
 
     if (clock_is_24h_style()) {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
     } else {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &now);
     }
 
     graphics_context_set_text_color(ctx, GColorWhite);
@@ -335,6 +341,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
   stop_pointer[0] = mktime(&s_time);
 
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
+
   // update screen
   layer_mark_dirty(prev_layer);
   layer_mark_dirty(next_layer);
@@ -342,24 +350,29 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-//  text_layer_set_text(previous_left_layer, "Select");
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Select button clicked");
-
+  struct tm now = s_time;
+  // update lap counter
   lap_counter++;
 
-  stop_pointer[lap_counter] = mktime(&s_time);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
-  for (int i = 0; i < lap_counter; ++i) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
-  }
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Bind: %d", lap_counter);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Bind: %dh %dm %ds", now.tm_hour, now.tm_min, now.tm_sec);
+  stop_pointer[lap_counter] = mktime(&now);
+
+  // reset pick counter
+  pick_counter = 0;
 
   if (lap_counter > 1) active_flag = 1;
 
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
   layer_mark_dirty(active_layer);
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
+  for (int i = 0; i <= lap_counter; ++i) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Array %d, Length: %d", i, (int)stop_pointer[i]);
+  }
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -367,11 +380,10 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (pick_counter < lap_counter) pick_counter++;
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
-  for (int i = 0; i < lap_counter; ++i) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
+  for (int i = 0; i <= lap_counter; ++i) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Array %d, Length: %d", i, (int)stop_pointer[i]);
   }
 
 //  layer_mark_dirty(prev_layer);
@@ -384,11 +396,10 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (pick_counter > 0) pick_counter--;
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
-  for (int i = 0; i < lap_counter; ++i) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
+  for (int i = 0; i <= lap_counter; ++i) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Array %d, Length: %d", i, (int)stop_pointer[i]);
   }
 
 //  layer_mark_dirty(prev_layer);
