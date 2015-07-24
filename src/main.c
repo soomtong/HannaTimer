@@ -73,13 +73,8 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_context_set_text_color(ctx, GColorIslamicGreen);
   graphics_draw_text(ctx, "LAP", fonts[font_small], geo_active_text_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  if (pick_counter) {
-    graphics_context_set_text_color(ctx, GColorLiberty);
-    graphics_draw_text(ctx, "INT", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  } else {
-    graphics_context_set_text_color(ctx, GColorOxfordBlue);
-    graphics_draw_text(ctx, "TOTAL", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  }
+  graphics_context_set_text_color(ctx, GColorOxfordBlue);
+  graphics_draw_text(ctx, "TOTAL", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
@@ -196,9 +191,6 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  // Update things here
-  // Use a long-lived buffer
-
   s_time = *tick_time;
 
   // update screen
