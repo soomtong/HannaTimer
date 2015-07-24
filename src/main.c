@@ -44,15 +44,15 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   int hour, min, sec;
 
   char s_time_buffer[10];
-  char total_laps_buffer[10];
   char lap_count_buffer[6];
 
+  const struct GSize active_layer_size = {(int16_t) (bounds.size.w / 2), 32};
   const struct GRect
       geo_active_top = {.origin = {bounds.origin.x, 2}, .size = {bounds.size.w, 46}},
-      geo_active_text_left = {.origin = {bounds.origin.x, 44}, .size = {(int16_t) (bounds.size.w / 2), 32}},
-      geo_active_text_right = {.origin = {(int16_t) (bounds.size.w / 2), 44}, .size = {(int16_t) (bounds.size.w / 2), 32}},
-      geo_active_data_left = {.origin = {bounds.origin.x, 65}, .size = {(int16_t) (bounds.size.w / 2), 32}},
-      geo_active_data_right = {.origin = {(int16_t) (bounds.size.w / 2), 65}, .size = {(int16_t) (bounds.size.w / 2), 32}};
+      geo_active_text_left = {.origin = {bounds.origin.x, 44}, active_layer_size},
+      geo_active_text_right = {.origin = {(int16_t) (bounds.size.w / 2), 44}, active_layer_size},
+      geo_active_data_left = {.origin = {bounds.origin.x, 65}, active_layer_size},
+      geo_active_data_right = {.origin = {(int16_t) (bounds.size.w / 2), 65}, active_layer_size};
 
   // fill background and set title
   graphics_context_set_fill_color(ctx, GColorLightGray);
@@ -84,36 +84,32 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], geo_active_data_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // draw lap time
-
-  if (lap_counter) {
-    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", 0, 0, 0);
+  if (!lap_counter) {
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", 0, 0, 0);
   }
   else {
-    diff_time = stop_pointer[0] - stop_pointer[pick_counter];
+    diff_time = stop_pointer[0] - stop_pointer[1];
 
     hour = (diff_time / 3600) % 24;
     min = (diff_time / 60) % 60;
     sec = diff_time % 60;
 
-    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", hour, min, sec);
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
   }
 
   graphics_context_set_text_color(ctx, GColorDukeBlue);
-  graphics_draw_text(ctx, total_laps_buffer, fonts[font_small], geo_active_data_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_active_data_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
 static void draw_prev_timer(Layer *layer, GContext* ctx) {
-
-  struct tm temp_time = s_time;
-  struct tm *stop_time;
-
-  time_t temp_stop_time;
-  time_t total_diff;
-  time_t now = mktime(&temp_time);
-
-  char stop_time_buffer[10];
+  // declare vars and set geometry
+  time_t stop_time;
+  time_t diff_time;
 
   int hour, min, sec;
+
+  char s_time_buffer[10];
+  char lap_time_buffer[10];
 
   struct GSize prev_layer_size = {(int16_t) (bounds.size.w / 2), 32};
   struct GRect
@@ -124,73 +120,85 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
       geo_prev_data2_left = {.origin = {bounds.origin.x, 32}, prev_layer_size},
       geo_prev_data2_right = {.origin = {(int16_t) (bounds.size.w / 2), 32}, prev_layer_size};
 
+  // fill background
   graphics_context_set_fill_color(ctx, GColorDarkGray);
   graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
 
+  // draw prev point
   if (lap_counter == 1) {
 
-    temp_stop_time = stop_pointer[0];
+    stop_time = stop_pointer[1];
+    s_time = *localtime(&stop_time);
 
-    stop_time = localtime(&temp_stop_time);
-    total_diff = now - stop_pointer[0];
-
-    hour = (total_diff / 3600) % 24;
-    min = (total_diff / 60) % 60;
-    sec = total_diff % 60;
-
-    strftime(stop_time_buffer, sizeof(stop_time_buffer), "%H:%M:%S", stop_time);
+    if (clock_is_24h_style()) {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+    } else {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+    }
 
     graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, stop_time_buffer, fonts[font_small], geo_prev_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-    snprintf(stop_time_buffer, sizeof(stop_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+    diff_time = stop_pointer[0] - stop_pointer[1];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
+
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
 
     graphics_context_set_text_color(ctx, GColorLightGray);
-    graphics_draw_text(ctx, stop_time_buffer, fonts[font_small], geo_prev_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   } else if (lap_counter > 1) {
 
-    temp_stop_time = stop_pointer[lap_counter - 2];
+    // draw first prev point
+    stop_time = stop_pointer[lap_counter - 1];
+    s_time = *localtime(&stop_time);
 
-    stop_time = localtime(&temp_stop_time);
-    total_diff = stop_pointer[lap_counter - 1] - stop_pointer[lap_counter - 2];
-
-    hour = (total_diff / 3600) % 24;
-    min = (total_diff / 60) % 60;
-    sec = total_diff % 60;
-
-    strftime(stop_time_buffer, sizeof(stop_time_buffer), "%H:%M:%S", stop_time);
+    if (clock_is_24h_style()) {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
+    } else {
+      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
+    }
 
     graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, stop_time_buffer, fonts[font_small], geo_prev_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-    snprintf(stop_time_buffer, sizeof(stop_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+    diff_time = stop_pointer[lap_counter] - stop_pointer[lap_counter - 1];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
+
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
 
     graphics_context_set_text_color(ctx, GColorLightGray);
-    graphics_draw_text(ctx, stop_time_buffer, fonts[font_small], geo_prev_data3_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data3_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
     // horizon line
     graphics_context_set_stroke_color(ctx, GColorLightGray); graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
 
-    temp_stop_time = stop_pointer[lap_counter - 1];
+    stop_time = stop_pointer[lap_counter];
+    s_time = *localtime(&stop_time);
 
-    stop_time = localtime(&temp_stop_time);
-    total_diff = now - stop_pointer[lap_counter - 1];
-
-    hour = (total_diff / 3600) % 24;
-    min = (total_diff / 60) % 60;
-    sec = total_diff % 60;
-
-    strftime(stop_time_buffer, sizeof(stop_time_buffer), "%H:%M:%S", stop_time);
+    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
 
     graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, stop_time_buffer, fonts[font_small], geo_prev_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-    snprintf(stop_time_buffer, sizeof(stop_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+    diff_time = stop_pointer[0] - stop_pointer[lap_counter];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
+
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
 
     graphics_context_set_text_color(ctx, GColorLightGray);
-    graphics_draw_text(ctx, stop_time_buffer, fonts[font_small], geo_prev_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
+    // reset prev layer frame
     layer_set_frame(active_layer, (GRect) { .origin = active_layer_origin_lower, .size = active_layer_size });
    }
 }
@@ -213,7 +221,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   stop_pointer[lap_counter] = mktime(&s_time);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)lap_counter);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
   for (int i = 0; i < lap_counter; ++i) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)stop_pointer[i]);
   }
