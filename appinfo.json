@@ -24,7 +24,7 @@
         "type": "font",
         "name": "FONT_HANNA_16",
         "file": "BMHANNA_11yrs.otf",
-        "characterRegex": "[0-9:LAPTOTAL\/]"
+        "characterRegex": "[0-9:LAPTOLIN\/]"
       }
     ]
   }
