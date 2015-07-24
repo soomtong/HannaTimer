@@ -33,6 +33,22 @@ static uint8_t lap_counter = 0;
 static uint8_t pick_counter = 0;
 static int8_t active_flag = 0;  // -1 : upper, 0 : normal, 1 : lower
 
+static void set_active_layer_position() {
+  switch (active_flag) {
+    case -1:
+      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
+      break;
+    case 0:
+      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
+      break;
+    case 1:
+      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
+      break;
+    default:
+      break;
+  }
+}
+
 static void draw_active_timer(Layer *layer, GContext* ctx) {
   // declare vars and set geometry
   struct tm now;
@@ -97,21 +113,6 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
 
   graphics_context_set_text_color(ctx, GColorDukeBlue);
   graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_active_data_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-  // move active layer by condition
-  switch (active_flag) {
-    case -1:
-      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
-      break;
-    case 0:
-      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
-      break;
-    case 1:
-      layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
-      break;
-    default:
-      break;
-  }
 }
 
 static void draw_prev_timer(Layer *layer, GContext* ctx) {
@@ -145,8 +146,8 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
   switch (active_flag) {
     case 0:
       // 1 line
-      if (lap_counter == 1 && pick_counter != 1) {
-        stop_time = stop_pointer[lap_counter];
+      if (lap_counter && lap_counter - pick_counter > 0) {
+        stop_time = stop_pointer[lap_counter - pick_counter];
         now = *localtime(&stop_time);
 
         if (clock_is_24h_style()) {
@@ -169,60 +170,6 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
         graphics_context_set_text_color(ctx, GColorLightGray);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
       }
-/*
-      if (lap_counter == 1 && pick_counter != 1) {
-
-      } else if (lap_counter > 1) {
-        // 2 line
-        // draw first prev point
-        stop_time = stop_pointer[lap_counter - 1];
-        now = *localtime(&stop_time);
-
-        if (clock_is_24h_style()) {
-          strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
-        } else {
-          strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &now);
-        }
-
-        graphics_context_set_text_color(ctx, GColorWhite);
-        graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-        diff_time = stop_pointer[lap_counter] - stop_pointer[lap_counter - 1];
-
-        hour = (diff_time / 3600) % 24;
-        min = (diff_time / 60) % 60;
-        sec = diff_time % 60;
-
-        snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
-
-        graphics_context_set_text_color(ctx, GColorLightGray);
-        graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data3_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-        // horizon line
-        graphics_context_set_stroke_color(ctx, GColorLightGray); graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
-
-        // draw second prev point
-        stop_time = stop_pointer[lap_counter];
-        now = *localtime(&stop_time);
-
-        strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
-
-        graphics_context_set_text_color(ctx, GColorWhite);
-        graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-        diff_time = stop_pointer[0] - stop_pointer[lap_counter];
-
-        hour = (diff_time / 3600) % 24;
-        min = (diff_time / 60) % 60;
-        sec = diff_time % 60;
-
-        snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
-
-        graphics_context_set_text_color(ctx, GColorLightGray);
-        graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-      }
-*/
-
       break;
     case 1:
       if (lap_counter > 1) {
@@ -419,6 +366,9 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (lap_counter > 1) active_flag = 1;
 
+  // move active layer by condition
+  set_active_layer_position();
+
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
   layer_mark_dirty(active_layer);
@@ -443,6 +393,9 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
 
+  // move active layer by condition
+  set_active_layer_position();
+
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
   layer_mark_dirty(active_layer);
@@ -463,6 +416,9 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
 
+  // move active layer by condition
+  set_active_layer_position();
+
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
   layer_mark_dirty(active_layer);
@@ -477,6 +433,8 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
   stop_pointer[0] = 0;
 
   active_flag = 0;
+
+  set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
@@ -523,6 +481,9 @@ static void window_load(Window *window) {
 //  layer_set_hidden(active_layer, false);
 
   if (lap_counter > 1) active_flag = 1;
+
+  // move active layer by condition
+  set_active_layer_position();
 
   // bind tick service
   tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
