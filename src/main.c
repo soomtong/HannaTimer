@@ -37,6 +37,15 @@ static uint8_t lap_counter = 0;
 static uint8_t pick_counter = 0;
 
 static void draw_active_timer(Layer *layer, GContext* ctx) {
+  // declare vars and set geometry
+  time_t stop_time;
+  time_t diff_time;
+
+  int hour, min, sec;
+
+  char s_time_buffer[10];
+  char total_laps_buffer[10];
+  char lap_count_buffer[6];
 
   const struct GRect
       geo_active_top = {.origin = {bounds.origin.x, 2}, .size = {bounds.size.w, 46}},
@@ -45,16 +54,18 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
       geo_active_data_left = {.origin = {bounds.origin.x, 65}, .size = {(int16_t) (bounds.size.w / 2), 32}},
       geo_active_data_right = {.origin = {(int16_t) (bounds.size.w / 2), 65}, .size = {(int16_t) (bounds.size.w / 2), 32}};
 
-  struct tm temp_time = s_time;
+  // fill background and set title
+  graphics_context_set_fill_color(ctx, GColorLightGray);
+  graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
 
-  char s_time_buffer[10];
-  char total_laps_buffer[10];
-  char lap_count_buffer[6];
+  graphics_context_set_text_color(ctx, GColorIslamicGreen);
+  graphics_draw_text(ctx, "LAP", fonts[font_small], geo_active_text_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_context_set_text_color(ctx, GColorOxfordBlue);
+  graphics_draw_text(ctx, "TOTAL", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  int hour, min, sec;
-
-  time_t total_diff;
-  time_t now = mktime(&temp_time);
+  // draw active point time
+  stop_time = stop_pointer[pick_counter];
+  s_time = *localtime(&stop_time);
 
   if (clock_is_24h_style()) {
     strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
@@ -62,35 +73,29 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
     strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
   }
 
-//  if (layer_get_hidden(layer)) layer_set_hidden(layer, false);
-
-  graphics_context_set_fill_color(ctx, GColorLightGray);
-  graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
-
   graphics_context_set_text_color(ctx, GColorBlack);
   graphics_draw_text(ctx, s_time_buffer, fonts[font_big], geo_active_top, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  graphics_context_set_text_color(ctx, GColorIslamicGreen);
-  graphics_draw_text(ctx, "LAP", fonts[font_small], geo_active_text_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  graphics_context_set_text_color(ctx, GColorOxfordBlue);
-  graphics_draw_text(ctx, "TOTAL", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
+  // draw lap
   snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], geo_active_data_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  if (stop_pointer[0]) {
-    total_diff = now - stop_pointer[0];
+  // draw lap time
 
-    hour = (total_diff / 3600) % 24;
-    min = (total_diff / 60) % 60;
-    sec = total_diff % 60;
+  if (lap_counter) {
+    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", 0, 0, 0);
+  }
+  else {
+    diff_time = stop_pointer[0] - stop_pointer[pick_counter];
+
+    hour = (diff_time / 3600) % 24;
+    min = (diff_time / 60) % 60;
+    sec = diff_time % 60;
 
     snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", hour, min, sec);
-  } else {
-    snprintf(total_laps_buffer, sizeof(total_laps_buffer), "%02d:%02d:%02d", 0, 0, 0);
   }
 
   graphics_context_set_text_color(ctx, GColorDukeBlue);
@@ -193,6 +198,8 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   s_time = *tick_time;
 
+  stop_pointer[0] = mktime(&s_time);
+
   // update screen
   layer_mark_dirty(active_layer);
 }
@@ -201,10 +208,10 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 //  text_layer_set_text(previous_left_layer, "Select");
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Select button clicked");
 
+  lap_counter++;
+
   stop_pointer[lap_counter] = mktime(&s_time);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
-
-  lap_counter++;
   APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Length: %d", (int)lap_counter);
   for (int i = 0; i < lap_counter; ++i) {
@@ -217,9 +224,14 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
   if (pick_counter < lap_counter) pick_counter++;
 
-  layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
-  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_lower, .size = next_layer_size});
-  layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_lower, .size = prev_layer_size});
+  if (pick_counter < lap_counter) {
+    // move up active layer
+    layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
+    layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_lower, .size = next_layer_size});
+    layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_lower, .size = prev_layer_size});
+  }
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -230,6 +242,8 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
   layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_upper, .size = next_layer_size});
   layer_set_frame(prev_layer, (GRect) {.origin = prev_layer_origin_upper, .size = prev_layer_size});
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
