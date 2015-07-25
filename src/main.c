@@ -86,7 +86,7 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_context_set_fill_color(ctx, GColorLightGray);
   graphics_fill_rect(ctx, (GRect) layer_get_bounds(layer), 0, GCornerNone);
 
-  graphics_context_set_text_color(ctx, GColorIslamicGreen);
+  graphics_context_set_text_color(ctx, GColorMidnightGreen);
   graphics_draw_text(ctx, "LAP", fonts[font_small], geo_active_text_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   graphics_context_set_text_color(ctx, GColorOxfordBlue);
   graphics_draw_text(ctx, "TOTAL", fonts[font_small], geo_active_text_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -399,8 +399,8 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 //  layer_mark_dirty(next_layer);
     layer_mark_dirty(active_layer);
 
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
+//    APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
   } else {
     // warning
     vibes_short_pulse();
@@ -446,7 +446,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Clear all laps");
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Clear all laps");
 
   lap_counter = 0;
   pick_counter = 0;
