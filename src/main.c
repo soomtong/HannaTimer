@@ -17,14 +17,14 @@ static Layer *active_layer;
 static GFont *fonts[fonts_length];
 static GRect bounds;
 
-static const struct GPoint prev_layer_origin_normal = {0, 0};
-static const struct GSize prev_layer_size = {144, 92};
-static const struct GPoint active_layer_origin_upper = {0, 18};
-static const struct GPoint active_layer_origin_normal = {0, 38};
-static const struct GPoint active_layer_origin_lower = {0, 58};
 static const struct GSize active_layer_size = {144, 92};
-static const struct GPoint next_layer_origin_normal = {0, 110};
+static const struct GSize prev_layer_size = {144, 92};
 static const struct GSize next_layer_size = {144, 92};
+static const struct GPoint active_layer_origin_upper = {0, 17};
+static const struct GPoint active_layer_origin_normal = {0, 38};
+static const struct GPoint active_layer_origin_lower = {0, 59};
+static const struct GPoint prev_layer_origin_normal = {0, 0};
+static const struct GPoint next_layer_origin_normal = {0, 110};
 
 static struct tm s_time;
 
@@ -92,7 +92,7 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_draw_text(ctx, s_time_buffer, fonts[font_big], geo_active_top, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // draw lap
-  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) lap_counter, sizeof(stop_pointer) / sizeof(time_t));
+  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) pick_counter ? lap_counter - pick_counter : lap_counter, sizeof(stop_pointer) / sizeof(time_t));
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], geo_active_data_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -158,7 +158,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
         if (lap_counter > 1) {
-          diff_time = stop_pointer[lap_counter] - stop_pointer[lap_counter - 1];
+          diff_time = stop_pointer[lap_counter - pick_counter + 1] - stop_time;
         } else {
           diff_time = stop_pointer[0] - stop_pointer[1];
         }
@@ -260,6 +260,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
   // draw next point
   switch (active_flag) {
     case 0:
+      // pick
       if (pick_counter && (lap_counter - pick_counter == 0)) {
         stop_time = stop_pointer[0];
         now = *localtime(&stop_time);
@@ -273,7 +274,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         graphics_context_set_text_color(ctx, GColorWhite);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-        diff_time = stop_pointer[0] - stop_pointer[lap_counter];
+        diff_time = stop_time - stop_pointer[lap_counter];
 
         hour = (diff_time / 3600) % 24;
         min = (diff_time / 60) % 60;
@@ -283,8 +284,13 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
 
         graphics_context_set_text_color(ctx, GColorLightGray);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-      } else if (pick_counter && lap_counter && (lap_counter - pick_counter > 0)) {
-        stop_time = stop_pointer[lap_counter - pick_counter - 1];
+      } else if (pick_counter && (lap_counter - pick_counter > 0)) {
+        if (pick_counter == 1) {
+          stop_time = stop_pointer[0];
+        } else {
+          stop_time = stop_pointer[lap_counter - pick_counter + 2];
+        }
+
         now = *localtime(&stop_time);
 
         if (clock_is_24h_style()) {
@@ -296,7 +302,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         graphics_context_set_text_color(ctx, GColorWhite);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data1_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-        diff_time = stop_pointer[0] - stop_pointer[lap_counter];
+        diff_time = stop_time - stop_pointer[lap_counter - pick_counter + 1];
 
         hour = (diff_time / 3600) % 24;
         min = (diff_time / 60) % 60;
@@ -309,10 +315,13 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
       }
       break;
     case -1:
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "2 line: pick => %d, lap => %d", pick_counter, lap_counter);
+
       if (lap_counter > 1) {
         // 2 line
         // draw first next point
-        stop_time = stop_pointer[lap_counter];
+        stop_time = stop_pointer[2];
+
         s_time = *localtime(&stop_time);
 
         if (clock_is_24h_style()) {
@@ -320,12 +329,11 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         } else {
           strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
         }
-//        APP_LOG(APP_LOG_LEVEL_DEBUG, "===> here: %d", (int)lap_counter);
 
         graphics_context_set_text_color(ctx, GColorWhite);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-        diff_time = stop_pointer[lap_counter] - stop_pointer[lap_counter - 1];
+        diff_time = stop_time - stop_pointer[1];
 
         hour = (diff_time / 3600) % 24;
         min = (diff_time / 60) % 60;
@@ -340,7 +348,12 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         graphics_context_set_stroke_color(ctx, GColorLightGray); graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
 
         // draw second next point
-        stop_time = stop_pointer[0];
+        if (lap_counter == 2) {
+          stop_time = stop_pointer[0];
+        } else {
+          stop_time = stop_pointer[3];
+        }
+
         s_time = *localtime(&stop_time);
 
         strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
@@ -348,7 +361,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         graphics_context_set_text_color(ctx, GColorWhite);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-        diff_time = stop_pointer[0] - stop_pointer[lap_counter];
+        diff_time = stop_time - stop_pointer[2];
 
         hour = (diff_time / 3600) % 24;
         min = (diff_time / 60) % 60;
@@ -366,58 +379,6 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
     default:
       break;
   }
-  /*else if (lap_counter - pick_counter > 1) {
-
-    // draw first next point
-    stop_time = stop_pointer[lap_counter - 1];
-    s_time = *localtime(&stop_time);
-
-    if (clock_is_24h_style()) {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
-    } else {
-      strftime(s_time_buffer, sizeof(s_time_buffer), "%I:%M:%S", &s_time);
-    }
-
-    graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data3_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-    diff_time = stop_pointer[lap_counter] - stop_pointer[lap_counter - 1];
-
-    hour = (diff_time / 3600) % 24;
-    min = (diff_time / 60) % 60;
-    sec = diff_time % 60;
-
-    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
-
-    graphics_context_set_text_color(ctx, GColorLightGray);
-    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data3_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-    // horizon line
-    graphics_context_set_stroke_color(ctx, GColorLightGray); graphics_draw_line(ctx, GPoint(0, 28), GPoint(144, 28));
-
-    // draw second next point
-    stop_time = stop_pointer[0];
-    s_time = *localtime(&stop_time);
-
-    strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &s_time);
-
-    graphics_context_set_text_color(ctx, GColorWhite);
-    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-    diff_time = stop_pointer[0] - stop_pointer[lap_counter];
-
-    hour = (diff_time / 3600) % 24;
-    min = (diff_time / 60) % 60;
-    sec = diff_time % 60;
-
-    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
-
-    graphics_context_set_text_color(ctx, GColorLightGray);
-    graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  }*/
-
-  // set next layer
-//  layer_set_frame(next_layer, (GRect) {.origin = next_layer_origin_normal, .size = next_layer_size});
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
