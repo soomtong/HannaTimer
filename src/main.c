@@ -29,7 +29,7 @@ static const struct GPoint next_layer_origin_normal = {0, 110};
 
 static struct tm s_time;
 
-static time_t stop_pointer[32];
+static time_t stop_pointer[33];
 static uint8_t lap_counter = 0;
 static uint8_t pick_counter = 0;
 static int8_t active_flag = 0;  // -1 : upper, 0 : normal, 1 : lower
@@ -101,7 +101,7 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_draw_text(ctx, s_time_buffer, fonts[font_big], geo_active_top, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // draw lap
-  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) pick_counter ? lap_counter - pick_counter : lap_counter, sizeof(stop_pointer) / sizeof(time_t));
+  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) pick_counter ? lap_counter - pick_counter : lap_counter, (sizeof(stop_pointer) / sizeof(time_t)) - 1);
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], geo_active_data_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -383,23 +383,28 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   struct tm now = s_time;
   // update lap counter
-  lap_counter++;
+  if (lap_counter < 32) {
+    lap_counter++;
 
-  stop_pointer[lap_counter] = mktime(&now);
+    stop_pointer[lap_counter] = mktime(&now);
 
-  // reset pick counter
-  pick_counter = 0;
+    // reset pick counter
+    pick_counter = 0;
 
-  if (lap_counter > 1) active_flag = 1;
+    if (lap_counter > 1) active_flag = 1;
 
-  set_active_layer_position();
+    set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
-  layer_mark_dirty(active_layer);
+    layer_mark_dirty(active_layer);
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
+  } else {
+    // warning
+    vibes_short_pulse();
+  }
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
