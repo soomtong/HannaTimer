@@ -208,7 +208,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
         stop_time = stop_pointer[lap_counter];
         now = *localtime(&stop_time);
 
-        strftime(s_time_buffer, sizeof(s_time_buffer), "%H:%M:%S", &now);
+        strftime(s_time_buffer, sizeof(s_time_buffer), set_clock_style(), &now);
 
         graphics_context_set_text_color(ctx, GColorWhite);
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -455,6 +455,7 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
   active_flag = 0;
 
   set_active_layer_position();
+  vibes_double_pulse();
 
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
