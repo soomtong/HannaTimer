@@ -2,39 +2,13 @@
 
 simple stopwatch for time-flow event
 
+- time with interval(gap) each stopwatch laps
 - retrieve past stopwatch point (marker)
-- toggle interval(gap) or date time each stopwatch laps
-
-edit marker time for custom 
 
 ## UX
- 
-### normal
 
-- prev marker (todo)
-- set mark (stopwatch laps)
-- stop this mark, (long click) clear all marker, next marker (blank if empty) (todo)
-
-### menu
-
-long select each past lap point
-
-- toggle gaps each prev, next marker
-- edit this marker's time
-- clear all by down button long click
-
-### edit
-
-- time up
-- decision
-- time down
-
-### timeline pin
-
-laps list
-
-
-## todo
-
-V1 : simple laps timer
-V2 : add stop watch feature (custom timer with pause)
+- up : move prev laps
+- select : mark time now
+- long select : remove this lap (short vibe feedback, very short vibe feedback if failed)
+- down : move next laps
+- long down : clear all laps

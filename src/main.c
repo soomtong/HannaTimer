@@ -8,6 +8,11 @@ enum CustomFonts {
   font_small,
   fonts_length
 };
+enum ActiveFlag {
+    FLAG_UPPER,
+    FLAG_NORMAL,
+    FLAG_LOWER
+};
 
 static Window *window;
 static Layer *prev_layer;
@@ -32,21 +37,53 @@ static struct tm s_time;
 static time_t stop_pointer[33];
 static uint8_t lap_counter = 0;
 static uint8_t pick_counter = 0;
-static int8_t active_flag = 0;  // -1 : upper, 0 : normal, 1 : lower
+
+static enum ActiveFlag active_flag = FLAG_NORMAL;
 
 static void set_active_layer_position() {
   switch (active_flag) {
-    case -1:
+    case FLAG_UPPER:
       layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_upper, .size = active_layer_size});
       break;
-    case 0:
+    case FLAG_NORMAL:
       layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_normal, .size = active_layer_size});
       break;
-    case 1:
+    case FLAG_LOWER:
       layer_set_frame(active_layer, (GRect) {.origin = active_layer_origin_lower, .size = active_layer_size});
       break;
     default:
       break;
+  }
+}
+
+static void set_active_flag(ButtonId buttonType) {
+  switch (buttonType) {
+    case BUTTON_ID_UP:
+      if (lap_counter > 1) {
+        if (lap_counter - pick_counter == 0) active_flag = FLAG_UPPER;
+        else if (lap_counter - pick_counter > 0) active_flag = FLAG_NORMAL;
+        else active_flag = FLAG_LOWER;
+      } else {
+        active_flag = FLAG_NORMAL;
+      }
+
+      break;
+    case BUTTON_ID_SELECT:
+      if (lap_counter > 1) active_flag = FLAG_LOWER;
+
+      break;
+    case BUTTON_ID_DOWN:
+      if (lap_counter > 1) {
+        if (pick_counter == 0) active_flag = FLAG_LOWER;
+        else if (lap_counter - pick_counter > 0) active_flag = FLAG_NORMAL;
+        else active_flag = FLAG_UPPER;
+      } else {
+        active_flag = FLAG_NORMAL;
+      }
+
+      break;
+
+    default:break;
   }
 }
 
@@ -101,7 +138,7 @@ static void draw_active_timer(Layer *layer, GContext* ctx) {
   graphics_draw_text(ctx, s_time_buffer, fonts[font_big], geo_active_top, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
   // draw lap
-  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) pick_counter ? lap_counter - pick_counter : lap_counter, (sizeof(stop_pointer) / sizeof(time_t)) - 1);
+  snprintf(lap_count_buffer, sizeof(lap_count_buffer), "%d/%d", (int) pick_counter ? lap_counter - pick_counter : lap_counter, ARRAY_LENGTH(stop_pointer) - 1);
 
   graphics_context_set_text_color(ctx, GColorDarkGreen);
   graphics_draw_text(ctx, lap_count_buffer, fonts[font_small], geo_active_data_left, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -151,7 +188,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
 
   // draw prev point
   switch (active_flag) {
-    case 0:
+    case FLAG_NORMAL:
       // 1 line
       if (lap_counter && lap_counter - pick_counter > 0) {
         stop_time = stop_pointer[lap_counter - pick_counter];
@@ -178,7 +215,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
       }
       break;
-    case 1:
+    case FLAG_LOWER:
       if (lap_counter > 1) {
         // 2 line
         // draw first prev point
@@ -225,7 +262,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_prev_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
       }
       break;
-    case -1:
+    case FLAG_UPPER:
       // 1 line clipping
       break;
     default:break;
@@ -259,7 +296,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
 
   // draw next point
   switch (active_flag) {
-    case 0:
+    case FLAG_NORMAL:
       // pick
       if (pick_counter && (lap_counter - pick_counter == 0)) {
         stop_time = stop_pointer[0];
@@ -306,7 +343,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data1_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
       }
       break;
-    case -1:
+    case FLAG_UPPER:
       if (lap_counter > 1) {
         // 2 line
         // draw first next point
@@ -359,7 +396,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
         graphics_draw_text(ctx, s_time_buffer, fonts[font_small], geo_next_data2_right, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
       }
       break;
-    case 1:
+    case FLAG_LOWER:
       // 1 line clipping
       break;
     default:
@@ -382,6 +419,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   struct tm now = s_time;
+
   // update lap counter
   if (lap_counter < 32) {
     lap_counter++;
@@ -391,16 +429,12 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     // reset pick counter
     pick_counter = 0;
 
-    if (lap_counter > 1) active_flag = 1;
-
+    set_active_flag(click_recognizer_get_button_id(recognizer));
     set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
     layer_mark_dirty(active_layer);
-
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "pick counter: %d", (int)pick_counter);
-//    APP_LOG(APP_LOG_LEVEL_DEBUG, "lap counter: %d", (int)lap_counter);
   } else {
     // warning
     vibes_short_pulse();
@@ -411,14 +445,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   // bind condition
   if (pick_counter < lap_counter) pick_counter++;
 
-  if (lap_counter > 1) {
-    if (lap_counter - pick_counter == 0) active_flag = -1;
-    else if (lap_counter - pick_counter > 0) active_flag = 0;
-    else active_flag = 1;
-  } else {
-    active_flag = 0;
-  }
-
+  set_active_flag(click_recognizer_get_button_id(recognizer));
   set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
@@ -430,19 +457,43 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   // bind condition
   if (pick_counter > 0) pick_counter--;
 
-  if (lap_counter > 1) {
-    if (pick_counter == 0) active_flag = 1;
-    else if (lap_counter - pick_counter > 0) active_flag = 0;
-    else active_flag = -1;
-  } else {
-    active_flag = 0;
-  }
-
+  set_active_flag(click_recognizer_get_button_id(recognizer));
   set_active_layer_position();
 
 //  layer_mark_dirty(prev_layer);
 //  layer_mark_dirty(next_layer);
   layer_mark_dirty(active_layer);
+}
+
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Clear this lap: %d / %d", pick_counter, lap_counter);
+
+  const uint32_t const very_short[] = { 50 };
+
+  VibePattern very_short_pattern = {
+      .durations = very_short,
+      .num_segments = ARRAY_LENGTH(very_short),
+  };
+
+  if (lap_counter && pick_counter) {
+    // ReArrange Array
+    for (int i = lap_counter - pick_counter + 1; i < lap_counter; ++i) {
+      stop_pointer[i] = stop_pointer[i + 1];
+    }
+
+    // reduce lap count and pick
+    lap_counter--;
+    pick_counter--;
+
+    if (lap_counter == pick_counter) set_active_flag(BUTTON_ID_UP);
+    else set_active_flag(BUTTON_ID_DOWN);
+
+    set_active_layer_position();
+
+    vibes_short_pulse();
+  } else {
+    vibes_enqueue_custom_pattern(very_short_pattern);
+  }
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -452,7 +503,7 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
   pick_counter = 0;
   stop_pointer[0] = 0;
 
-  active_flag = 0;
+  active_flag = FLAG_NORMAL;
 
   set_active_layer_position();
   vibes_double_pulse();
@@ -463,10 +514,15 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
 }
 
 static void click_config_provider(void *context) {
-  window_long_click_subscribe(BUTTON_ID_DOWN, 500, down_long_click_handler, NULL);
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  uint16_t ms_long_delay = 500;
+
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, ms_long_delay, select_long_click_handler, NULL);
+
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+  window_long_click_subscribe(BUTTON_ID_DOWN, ms_long_delay, down_long_click_handler, NULL);
 }
 
 static void window_load(Window *window) {
@@ -501,9 +557,8 @@ static void window_load(Window *window) {
   layer_set_hidden(next_layer, false);
   layer_set_hidden(active_layer, false);
 
-  if (lap_counter > 1) active_flag = 1;
-
   // move active layer by condition
+  set_active_flag(BUTTON_ID_SELECT);
   set_active_layer_position();
 
   // bind tick service
