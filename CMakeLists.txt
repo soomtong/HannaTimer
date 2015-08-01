@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 project(HannaTimer)
 
+include_directories(src build/basalt/src)
+
 set(CMAKE_USE_RELATIVE_PATHS "TRUE")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build")
 set(CMAKE_AR "/usr/local/opt/pebble-toolchain/arm-cs-tools/bin/arm-none-eabi-ar")
@@ -16,12 +18,16 @@ set(CMAKE_STRIP "/usr/local/opt/pebble-toolchain/arm-cs-tools/bin/arm-none-eabi-
 set(FAKE_TARGET fakeTarget)
 
 set(SOURCE_FILES
-   src/main.c
    appinfo.json
    wscript)
 
-add_executable(HannaTimer ${SOURCE_FILES})
-include_directories(src build/basalt/src)
+add_executable(HannaTimer
+${SOURCE_FILES}
+src/common.h
+src/main.c
+src/lap_timer.c
+src/stop_timer.c)
+
 add_custom_target(fakeTarget
    cd /Users/sven/Repository/HannaTimer/;pebble build
 )
