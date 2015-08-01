@@ -27,8 +27,10 @@ typedef uint8_t ApplicationMode;
 
 Window *windows[window_length];
 GFont *fonts[fonts_length];
-ApplicationMode application_mode = main_window;
+ApplicationMode application_mode;
 
+// common
+char *set_clock_style();
 
 // lap_timer.c
 void load_lap_timer_window(Window *window);

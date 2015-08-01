@@ -24,9 +24,11 @@ set(SOURCE_FILES
 add_executable(HannaTimer
 ${SOURCE_FILES}
 src/common.h
+src/common.c
 src/main.c
 src/lap_timer.c
-src/stop_timer.c)
+src/stop_timer.c
+)
 
 add_custom_target(fakeTarget
    cd /Users/sven/Repository/HannaTimer/;pebble build

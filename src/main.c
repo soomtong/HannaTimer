@@ -25,6 +25,8 @@ static void init(void) {
     application_mode = (uint8_t) lap_timer_window;
   }
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
+
   // prepare main window
   for (int i = 0; i < window_length; ++i) {
     windows[i] = window_create();
@@ -37,14 +39,14 @@ static void init(void) {
     fonts[i] = fonts_load_custom_font(resource_get_handle(resource_id + i));
   }
 
-  window_stack_push(windows[main_window], false);
+//  window_stack_push(windows[main_window], false);
 
   switch_app_window(application_mode);
 }
 
 static void deinit(void) {
   // save previous mode
-  persist_write_int(PERSIST_KEY_ID_MODE, (int32_t) lap_timer_window);
+  persist_write_int(PERSIST_KEY_ID_MODE, (int32_t) application_mode);
 
   for (uint8_t i = 0; i < fonts_length; ++i) {
     if (fonts[i]) fonts_unload_custom_font(fonts[i]);

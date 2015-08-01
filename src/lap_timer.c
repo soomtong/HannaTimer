@@ -81,18 +81,6 @@ static void set_active_flag(ButtonId buttonType) {
   }
 }
 
-static char *set_clock_style() {
-  char *type;
-
-  if (clock_is_24h_style()) {
-    type = "%H:%M:%S";
-  } else {
-    type = "%I:%M:%S";
-  }
-
-  return type;
-}
-
 static void draw_active_timer(Layer *layer, GContext* ctx) {
   // declare vars and set geometry
   struct tm now;
@@ -165,7 +153,7 @@ static void draw_prev_timer(Layer *layer, GContext* ctx) {
   int hour, min, sec;
 
   char s_time_buffer[10];
-  char lap_time_buffer[10];
+//  char lap_time_buffer[10];
 
   struct GSize geo_prev_layer_size = {(int16_t) (bounds.size.w / 2), 32};
   struct GRect
@@ -273,7 +261,7 @@ static void draw_next_timer(Layer *layer, GContext* ctx) {
   int hour, min, sec;
 
   char s_time_buffer[10];
-  char lap_time_buffer[10];
+//  char lap_time_buffer[10];
 
   struct GSize geo_next_layer_size = {(int16_t) (bounds.size.w / 2), 32};
   struct GRect
