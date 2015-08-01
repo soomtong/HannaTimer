@@ -1,5 +1,6 @@
 #include <pebble.h>
 
+#define PERSIST_KEY_ID_MODE 0
 #define PERSIST_KEY_ID_LAPS 1
 #define PERSIST_KEY_ID_LAP_COUNTER 2
 
@@ -13,8 +14,14 @@ enum ActiveFlag {
     FLAG_NORMAL,
     FLAG_LOWER
 };
+enum ApplicationWindow {
+    window_main=0,
+    lap_window,
+    timer_window,
+    window_length
+};
 
-static Window *window;
+static Window *windows[window_length];
 static Layer *prev_layer;
 static Layer *next_layer;
 static Layer *active_layer;
@@ -579,6 +586,14 @@ static void window_unload(Window *window) {
 
 static void init(void) {
   // load previous persistent data
+  const bool animated = true;
+//  uint8_t app_mode = 0;
+
+/*
+  if (persist_exists(PERSIST_KEY_ID_MODE)) {
+    app_mode = (uint8_t) persist_read_int(PERSIST_KEY_ID_MODE);
+  }
+*/
   if (persist_exists(PERSIST_KEY_ID_LAPS)) {
     persist_read_data(PERSIST_KEY_ID_LAPS, &stop_pointer, sizeof(stop_pointer));
   }
@@ -587,26 +602,60 @@ static void init(void) {
   }
 
   // prepare main window
-  window = window_create();
+  for (int i = 0; i < window_length; ++i) {
+    if (windows[i])   window_create();
+  }
 
-  window_set_background_color(window, GColorDarkGray);
+  window_set_background_color(windows[lap_window], GColorDarkGray);
 
-  window_set_click_config_provider(window, click_config_provider);
-  window_set_window_handlers(window, (WindowHandlers) {
+  window_set_click_config_provider(windows[lap_window], click_config_provider);
+  window_set_window_handlers(windows[lap_window], (WindowHandlers) {
       .load = window_load,
       .unload = window_unload,
   });
 
-  const bool animated = true;
-  window_stack_push(window, animated);
+  window_stack_push(windows[lap_window], animated);
+
+//  window_stack_push(windows[window_main], animated);
+
+/*
+  switch (app_mode) {
+    case 1:
+      window_set_background_color(windows[timer_window], GColorDarkGray);
+
+      window_set_click_config_provider(windows[timer_window], click_config_provider);
+      window_set_window_handlers(windows[timer_window], (WindowHandlers) {
+          .load = window_load,
+          .unload = window_unload,
+      });
+
+      window_stack_push(windows[timer_window], animated);
+      break;
+
+    default:
+      window_set_background_color(windows[lap_window], GColorDarkGray);
+
+      window_set_click_config_provider(windows[lap_window], click_config_provider);
+      window_set_window_handlers(windows[lap_window], (WindowHandlers) {
+          .load = window_load,
+          .unload = window_unload,
+      });
+
+      window_stack_push(windows[lap_window], animated);
+      break;
+  }
+*/
 }
 
 static void deinit(void) {
   // save persistent data
   persist_write_data(PERSIST_KEY_ID_LAPS, &stop_pointer, sizeof(stop_pointer));
   persist_write_int(PERSIST_KEY_ID_LAP_COUNTER, (int32_t)lap_counter);
+//  persist_write_int(PERSIST_KEY_ID_MODE, PERSIST_KEY_ID_MODE ? 0 : 1);
 
-  window_destroy(window);
+  for (int i = 0; i < window_length; ++i) {
+    if (windows[i])   window_destroy(windows[i]);
+  }
 }
 
 int main(void) {

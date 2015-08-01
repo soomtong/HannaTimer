@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(stamp)
+project(HannaTimer)
 
 set(CMAKE_USE_RELATIVE_PATHS "TRUE")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build")
@@ -20,9 +20,9 @@ set(SOURCE_FILES
    appinfo.json
    wscript)
 
-add_executable(stamp ${SOURCE_FILES})
+add_executable(HannaTimer ${SOURCE_FILES})
 include_directories(src build/basalt/src)
 add_custom_target(fakeTarget
-   cd /Users/sven/Repository/stamp/;pebble build
+   cd /Users/sven/Repository/HannaTimer/;pebble build
 )
 add_dependencies(${PROJECT_NAME} ${FAKE_TARGET})
