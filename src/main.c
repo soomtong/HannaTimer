@@ -3,14 +3,14 @@
 static void switch_app_window(uint8_t app_mode) {
   switch (app_mode) {
     case lap_timer_window:
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = lap window");
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = lap timer window");
       load_lap_timer_window(windows[lap_timer_window]);
 
       break;
 
     case stop_timer_window:
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = timer window");
-      load_stop_timer_window(windows[lap_timer_window]);
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = stop timer window");
+      load_stop_timer_window(windows[stop_timer_window]);
 
       break;
     default:break;
@@ -25,7 +25,7 @@ static void init(void) {
     application_mode = (uint8_t) lap_timer_window;
   }
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
 
   // prepare main window
   for (int i = 0; i < window_length; ++i) {

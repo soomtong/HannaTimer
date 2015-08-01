@@ -399,6 +399,23 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   //APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
 }
 
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  // bind condition
+  if (pick_counter < lap_counter) pick_counter++;
+
+  set_active_flag(click_recognizer_get_button_id(recognizer));
+  set_active_layer_position();
+
+//  layer_mark_dirty(prev_layer);
+//  layer_mark_dirty(next_layer);
+  layer_mark_dirty(active_layer);
+}
+
+static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  window_stack_remove(windows[lap_timer_window], false);
+  load_stop_timer_window(windows[stop_timer_window]);
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   struct tm now = s_time;
 
@@ -422,19 +439,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     vibes_short_pulse();
   }
 }
-
-static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  // bind condition
-  if (pick_counter < lap_counter) pick_counter++;
-
-  set_active_flag(click_recognizer_get_button_id(recognizer));
-  set_active_layer_position();
-
-//  layer_mark_dirty(prev_layer);
-//  layer_mark_dirty(next_layer);
-  layer_mark_dirty(active_layer);
-}
-
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "Clear this lap: %d / %d", pick_counter, lap_counter);
@@ -500,6 +504,7 @@ static void click_config_provider(void *context) {
   uint16_t ms_long_delay = 500;
 
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+  window_long_click_subscribe(BUTTON_ID_UP, ms_long_delay, up_long_click_handler, NULL);
 
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_long_click_subscribe(BUTTON_ID_SELECT, ms_long_delay, select_long_click_handler, NULL);
@@ -558,6 +563,8 @@ static void window_unload(Window *window) {
   layer_destroy(prev_layer);
   layer_destroy(next_layer);
   layer_destroy(active_layer);
+
+  application_mode = lap_timer_window;
 }
 
 void load_lap_timer_window(Window *window) {
