@@ -23,7 +23,7 @@ static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) 
   APP_LOG(APP_LOG_LEVEL_DEBUG, "change window");
 
   window_stack_remove(windows[stop_timer_window], false);
-  load_lap_timer_window(windows[lap_timer_window]);
+  load_lap_timer_window();
 }
 
 static void click_config_provider(void *context) {
@@ -48,7 +48,9 @@ static void window_unload(Window *window) {
   application_mode = stop_timer_window;
 }
 
-void load_stop_timer_window(Window *window) {
+void load_stop_timer_window() {
+  Window *window = windows[stop_timer_window];
+
   const bool animated = true;
 
   window_set_background_color(window, GColorDarkGray);

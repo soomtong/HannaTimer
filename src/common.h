@@ -33,7 +33,7 @@ ApplicationMode application_mode;
 char *set_clock_style();
 
 // lap_timer.c
-void load_lap_timer_window(Window *window);
+void load_lap_timer_window();
 
 // stop_timer.c
-void load_stop_timer_window(Window *window);
+void load_stop_timer_window();

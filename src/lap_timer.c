@@ -413,7 +413,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
   window_stack_remove(windows[lap_timer_window], false);
-  load_stop_timer_window(windows[stop_timer_window]);
+  load_stop_timer_window();
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -567,7 +567,9 @@ static void window_unload(Window *window) {
   application_mode = lap_timer_window;
 }
 
-void load_lap_timer_window(Window *window) {
+void load_lap_timer_window() {
+  Window *window = windows[lap_timer_window];
+
   const bool animated = true;
 
   window_set_background_color(window, GColorDarkGray);
