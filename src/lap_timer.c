@@ -412,7 +412,6 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  window_stack_remove(windows[lap_timer_window], false);
   load_stop_timer_window();
 }
 
@@ -563,23 +562,21 @@ static void window_unload(Window *window) {
   layer_destroy(prev_layer);
   layer_destroy(next_layer);
   layer_destroy(active_layer);
-
-  application_mode = lap_timer_window;
 }
 
 void load_lap_timer_window() {
-  Window *window = windows[lap_timer_window];
-
   const bool animated = true;
+  application_mode = lap_timer_window;
 
-  window_set_background_color(window, GColorDarkGray);
+  window_set_background_color(windows[lap_timer_window], GColorDarkGray);
 
-  window_set_click_config_provider(window, click_config_provider);
-  window_set_window_handlers(window, (WindowHandlers) {
+  window_set_click_config_provider(windows[lap_timer_window], click_config_provider);
+  window_set_window_handlers(windows[lap_timer_window], (WindowHandlers) {
       .load = window_load,
       .unload = window_unload,
   });
 
-  window_stack_push(window, animated);
+  window_stack_remove(windows[stop_timer_window], animated);
+  window_stack_push(windows[lap_timer_window], animated);
 }
 
