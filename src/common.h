@@ -10,6 +10,7 @@
 #define PERSIST_KEY_ID_MODE 0
 #define PERSIST_KEY_ID_LAPS 1
 #define PERSIST_KEY_ID_LAP_COUNTER 2
+#define PERSIST_KEY_ID_STOP_PICK_COUNTER 2
 
 enum CustomFonts {
     font_big = 0,

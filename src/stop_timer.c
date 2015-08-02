@@ -10,6 +10,7 @@ static GRect bounds;
 
 static struct tm s_time;
 
+static uint8_t pick_counter = 0;
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   s_time = *tick_time;
@@ -17,6 +18,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   // update screen
 
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Uptime: %dh %dm %ds", s_time.tm_hour, s_time.tm_min, s_time.tm_sec);
+}
+
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  pick_counter++;
 }
 
 static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -29,7 +34,14 @@ static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) 
 static void click_config_provider(void *context) {
   uint16_t ms_long_delay = 500;
 
+  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_long_click_subscribe(BUTTON_ID_UP, ms_long_delay, up_long_click_handler, NULL);
+
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, ms_long_delay, select_long_click_handler, NULL);
+
+  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+  window_long_click_subscribe(BUTTON_ID_DOWN, ms_long_delay, down_long_click_handler, NULL);
 }
 
 static void window_load(Window *window) {
@@ -43,6 +55,8 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_COUNTER, (int32_t)pick_counter);
+
   tick_timer_service_unsubscribe();
 
   application_mode = stop_timer_window;
