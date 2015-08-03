@@ -3,13 +3,13 @@
 static void switch_app_window(uint8_t app_mode) {
   switch (app_mode) {
     case lap_timer_window:
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = lap timer window");
+//      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = lap timer window");
       load_lap_timer_window();
 
       break;
 
     case stop_timer_window:
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = stop timer window");
+//      APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = stop timer window");
       load_stop_timer_window();
 
       break;
@@ -45,8 +45,6 @@ static void init(void) {
 static void deinit(void) {
   // save previous mode
   persist_write_int(PERSIST_KEY_ID_MODE, (int32_t) application_mode);
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
 
   for (uint8_t i = 0; i < fonts_length; ++i) {
     if (fonts[i]) fonts_unload_custom_font(fonts[i]);

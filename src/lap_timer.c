@@ -440,7 +440,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Clear this lap: %d / %d", pick_counter, lap_counter);
 
   const uint32_t const very_short[] = { 50 };
 
@@ -483,8 +482,6 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-//  APP_LOG(APP_LOG_LEVEL_DEBUG, "Clear all laps");
-
   lap_counter = 0;
   pick_counter = 0;
   stop_pointer[0] = 0;
@@ -568,7 +565,7 @@ void load_lap_timer_window() {
   const bool animated = true;
   application_mode = lap_timer_window;
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
+//  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
 
   window_set_background_color(windows[lap_timer_window], GColorDarkGray);
 
