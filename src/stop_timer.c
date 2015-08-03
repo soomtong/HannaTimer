@@ -8,13 +8,13 @@ static Layer *grid_layer;
 
 static GRect bounds;
 
-static const struct GSize active_layer_size = {144, 35};
+static const struct GSize active_layer_size = {144, 36};
 static const struct GPoint active_layer_origin[5] = {
     {0, 0},
-    {0, 28},
+    {0, 33},
     {0, 66},
-    {0, 90},
-    {0, 120}
+    {0, 99},
+    {0, 132}
 };
 static const struct GSize layer_size = {144, 30};
 static const struct GPoint layer_origin[5] = {
@@ -36,30 +36,28 @@ static void draw_stop_timer(Layer *layer, GContext* ctx) {
 
   char s_time_buffer[10];
 
-  // fill background
-  graphics_context_set_fill_color(ctx, GColorLightGray);
-  graphics_fill_rect(ctx, (GRect) {.origin = active_layer_origin[2], .size = active_layer_size}, 0, GCornerNone);
+  for (int i = 0; i < 5; ++i) {
+    hour = (stop_timer[i] / 3600) % 24;
+    min = (stop_timer[i] / 60) % 60;
+    sec = stop_timer[i] % 60;
 
-  hour = (stop_timer[2] / 3600) % 24;
-  min = (stop_timer[2] / 60) % 60;
-  sec = stop_timer[2] % 60;
+    snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
 
-  snprintf(s_time_buffer, sizeof(s_time_buffer), "%02d:%02d:%02d", hour, min, sec);
+    if (i == pick_counter) {
+      // fill background
+      graphics_context_set_fill_color(ctx, GColorLightGray);
+      graphics_fill_rect(ctx, (GRect) {.origin = active_layer_origin[i], .size = active_layer_size}, 0, GCornerNone);
 
-  graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[0], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+      graphics_context_set_text_color(ctx, GColorBlack);
+      graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[i], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[1], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    } else {
+      graphics_context_set_text_color(ctx, GColorWhite);
+      graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[i], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
-  graphics_context_set_text_color(ctx, GColorBlack);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[2], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    }
 
-  graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[3], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-
-  graphics_context_set_text_color(ctx, GColorWhite);
-  graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[4], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
 
 }
 
@@ -72,13 +70,16 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   stop_timer[2]++;
   layer_mark_dirty(grid_layer);
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Timer: %ds", (int)stop_timer[2]);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Timer: %ds, pick counter: %d", (int) stop_timer[2], (int) pick_counter);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "up click");
 
-  if (pick_counter < 4) pick_counter++;
+  if (pick_counter > 0) {
+    pick_counter--;
+    layer_mark_dirty(grid_layer);
+  }
 }
 
 static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -101,7 +102,10 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "down click, now pick: %d", pick_counter);
 
-  if (pick_counter > 0) pick_counter--;
+  if (pick_counter < 4) {
+    pick_counter++;
+    layer_mark_dirty(grid_layer);
+  }
 }
 
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
