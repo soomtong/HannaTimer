@@ -48,7 +48,7 @@ static void draw_stop_timer(Layer *layer, GContext* ctx) {
       graphics_fill_rect(ctx, (GRect) {.origin = active_layer_origin[i], .size = active_layer_size}, 0, GCornerNone);
 
       if (active_timer[i]) {
-        graphics_context_set_text_color(ctx, GColorTiffanyBlue);
+        graphics_context_set_text_color(ctx, GColorBlack);
       } else {
         graphics_context_set_text_color(ctx, GColorVeryLightBlue);
       }
@@ -63,7 +63,7 @@ static void draw_stop_timer(Layer *layer, GContext* ctx) {
         if (stop_timer[i]) {
           graphics_context_set_text_color(ctx, GColorLightGray);
         } else {
-          graphics_context_set_text_color(ctx, GColorBlack);
+          graphics_context_set_text_color(ctx, GColorOxfordBlue);
         }
       }
 
