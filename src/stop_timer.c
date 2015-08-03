@@ -25,18 +25,17 @@ static const struct GPoint layer_origin[5] = {
     {0, 128}
 };
 
-static struct tm s_time;
-
 static uint8_t pick_counter = 2;
-static time_t stop_timer[5];
-static bool active_timer[5];
+
+static time_t stop_timer[STOP_TIMER_SIZE];
+static bool active_timer[STOP_TIMER_SIZE];
 
 static void draw_stop_timer(Layer *layer, GContext* ctx) {
   int hour, min, sec;
 
   char s_time_buffer[10];
 
-  for (int i = 0; i < 5; ++i) {
+  for (uint8_t i = 0; i < STOP_TIMER_SIZE; ++i) {
     hour = (stop_timer[i] / 3600) % 24;
     min = (stop_timer[i] / 60) % 60;
     sec = stop_timer[i] % 60;
@@ -48,29 +47,46 @@ static void draw_stop_timer(Layer *layer, GContext* ctx) {
       graphics_context_set_fill_color(ctx, GColorLightGray);
       graphics_fill_rect(ctx, (GRect) {.origin = active_layer_origin[i], .size = active_layer_size}, 0, GCornerNone);
 
-      graphics_context_set_text_color(ctx, GColorBlack);
+      if (active_timer[i]) {
+        graphics_context_set_text_color(ctx, GColorBlack);
+      } else {
+        graphics_context_set_text_color(ctx, GColorDarkGray);
+      }
+
       graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[i], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
     } else {
-      graphics_context_set_text_color(ctx, GColorWhite);
+      // normal timer background
+      if (active_timer[i]) {
+        graphics_context_set_text_color(ctx, GColorWhite);
+      } else {
+        graphics_context_set_text_color(ctx, GColorLightGray);
+      }
+
       graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[i], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
     }
-
   }
-
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  s_time = *tick_time;
+  // conditional update
+  bool need_update = false;
 
   // update screen
-  // is there active timer?
-  active_timer[2] = true;
-  stop_timer[2]++;
-  layer_mark_dirty(grid_layer);
+  for (uint8_t i = 0; i < STOP_TIMER_SIZE; ++i) {
+    if (active_timer[i]) {
+      stop_timer[i]++;
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Timer: %ds, pick counter: %d", (int) stop_timer[2], (int) pick_counter);
+      need_update = true;
+    }
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Timer: %ds", (int) stop_timer[2]);
+  }
+
+  if (need_update) {
+    layer_mark_dirty(grid_layer);
+  }
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -92,16 +108,26 @@ static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select click, now pick: %d", pick_counter);
 
+  // toggle this timer
+  active_timer[pick_counter] = !active_timer[pick_counter];
+
+  layer_mark_dirty(grid_layer);
 }
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "select long click for clear, now pick: %d", pick_counter);
 
+  // reset this timer
+  active_timer[pick_counter] = false;
+  stop_timer[pick_counter] = 0;
+
+  layer_mark_dirty(grid_layer);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "down click, now pick: %d", pick_counter);
 
+  // move down navigator
   if (pick_counter < 4) {
     pick_counter++;
     layer_mark_dirty(grid_layer);
@@ -111,6 +137,14 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "down long click for all clear");
 
+  // reset all timer
+  for (int i = 0; i < STOP_TIMER_SIZE; ++i) {
+    active_timer[i] = false;
+    stop_timer[i] = 0;
+    pick_counter = 2;
+  }
+
+  layer_mark_dirty(grid_layer);
 }
 
 static void click_config_provider(void *context) {

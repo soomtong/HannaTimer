@@ -28,7 +28,7 @@ static const struct GPoint next_layer_origin_normal = {0, 110};
 
 static struct tm s_time;
 
-static time_t stop_pointer[33];
+static time_t stop_pointer[LAP_TIMER_SIZE + 1];
 static uint8_t lap_counter = 0;
 static uint8_t pick_counter = 0;
 
@@ -419,7 +419,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   struct tm now = s_time;
 
   // update lap counter
-  if (lap_counter < 32) {
+  if (lap_counter < LAP_TIMER_SIZE) {
     lap_counter++;
 
     stop_pointer[lap_counter] = mktime(&now);
