@@ -568,6 +568,8 @@ void load_lap_timer_window() {
   const bool animated = true;
   application_mode = lap_timer_window;
 
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
+
   window_set_background_color(windows[lap_timer_window], GColorDarkGray);
 
   window_set_click_config_provider(windows[lap_timer_window], click_config_provider);

@@ -50,7 +50,7 @@ static void draw_stop_timer(Layer *layer, GContext* ctx) {
       if (active_timer[i]) {
         graphics_context_set_text_color(ctx, GColorBlack);
       } else {
-        graphics_context_set_text_color(ctx, GColorLiberty);
+        graphics_context_set_text_color(ctx, GColorMintGreen);
       }
 
       graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[i], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -212,6 +212,8 @@ static void window_unload(Window *window) {
 void load_stop_timer_window() {
   const bool animated = true;
   application_mode = stop_timer_window;
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
 
   window_set_background_color(windows[stop_timer_window], GColorDarkGray);
 

@@ -19,13 +19,11 @@ static void switch_app_window(uint8_t app_mode) {
 
 static void init(void) {
   // load previous persistent data
-  if (persist_exists(PERSIST_KEY_ID_MODE)) {
+  if (persist_exists(PERSIST_KEY_ID_MODE) == lap_timer_window || persist_exists(PERSIST_KEY_ID_MODE) == stop_timer_window) {
     application_mode = (uint8_t) persist_read_int(PERSIST_KEY_ID_MODE);
   } else {
     application_mode = (uint8_t) lap_timer_window;
   }
-
-//  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
 
   // prepare main window
   for (int i = 0; i < window_length; ++i) {
@@ -47,6 +45,8 @@ static void init(void) {
 static void deinit(void) {
   // save previous mode
   persist_write_int(PERSIST_KEY_ID_MODE, (int32_t) application_mode);
+
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "app mode = %d", application_mode);
 
   for (uint8_t i = 0; i < fonts_length; ++i) {
     if (fonts[i]) fonts_unload_custom_font(fonts[i]);
