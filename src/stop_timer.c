@@ -50,7 +50,7 @@ static void draw_stop_timer(Layer *layer, GContext* ctx) {
       if (active_timer[i]) {
         graphics_context_set_text_color(ctx, GColorBlack);
       } else {
-        graphics_context_set_text_color(ctx, GColorDarkGray);
+        graphics_context_set_text_color(ctx, GColorLiberty);
       }
 
       graphics_draw_text(ctx, s_time_buffer, fonts[font_big], (GRect) {.origin = layer_origin[i], .size = layer_size}, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
@@ -164,6 +164,21 @@ static void window_load(Window *window) {
   if (persist_exists(PERSIST_KEY_ID_STOP_PICK_COUNTER)) {
     pick_counter = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_COUNTER);
   }
+  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_TIMER_0)) {
+    stop_timer[0] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_TIMER_0);
+  }
+  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_TIMER_1)) {
+    stop_timer[1] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_TIMER_1);
+  }
+  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_TIMER_2)) {
+    stop_timer[2] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_TIMER_2);
+  }
+  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_TIMER_3)) {
+    stop_timer[3] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_TIMER_3);
+  }
+  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_TIMER_4)) {
+    stop_timer[4] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_TIMER_4);
+  }
 
   Layer *window_layer = window_get_root_layer(window);
   bounds = layer_get_bounds(window_layer);
@@ -182,6 +197,12 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
   persist_write_int(PERSIST_KEY_ID_STOP_PICK_COUNTER, (int32_t)pick_counter);
+
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_TIMER_0, (int32_t)stop_timer[0]);
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_TIMER_1, (int32_t)stop_timer[1]);
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_TIMER_2, (int32_t)stop_timer[2]);
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_TIMER_3, (int32_t)stop_timer[3]);
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_TIMER_4, (int32_t)stop_timer[4]);
 
   tick_timer_service_unsubscribe();
 
