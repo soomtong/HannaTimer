@@ -104,8 +104,19 @@ static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) 
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  const uint32_t const very_short[] = { 50 };
+
+  VibePattern very_short_pattern = {
+      .durations = very_short,
+      .num_segments = ARRAY_LENGTH(very_short),
+  };
+
   // toggle this timer
   active_timer[pick_counter] = !active_timer[pick_counter];
+
+  if (!active_timer[pick_counter]) {
+    vibes_enqueue_custom_pattern(very_short_pattern);
+  }
 
   layer_mark_dirty(grid_layer);
 }
@@ -114,6 +125,8 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
   // reset this timer
   active_timer[pick_counter] = false;
   stop_timer[pick_counter] = 0;
+
+  vibes_short_pulse();
 
   layer_mark_dirty(grid_layer);
 }
@@ -133,6 +146,8 @@ static void down_long_click_handler(ClickRecognizerRef recognizer, void *context
     stop_timer[i] = 0;
     pick_counter = 2;
   }
+
+  vibes_double_pulse();
 
   layer_mark_dirty(grid_layer);
 }
