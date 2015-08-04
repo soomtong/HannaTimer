@@ -152,6 +152,7 @@ static void click_config_provider(void *context) {
 
 static void window_load(Window *window) {
   uint8_t flag = 0;
+  time_t now = 0, diff = 0;
 
   if (persist_exists(PERSIST_KEY_ID_STOP_PICK_COUNTER)) {
     pick_counter = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_COUNTER);
@@ -175,6 +176,12 @@ static void window_load(Window *window) {
     flag = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_FLAG);
   }
 
+  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME)) {
+    now = time(NULL);
+
+    diff = now - (time_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME);
+  }
+
   // load flag bit
   // 31 = 11111
   // 30 = 11110
@@ -185,6 +192,10 @@ static void window_load(Window *window) {
 
   for (int i = 0; i < STOP_TIMER_SIZE; ++i) {
     active_timer[i] = (bool) (flag & (1 << i));
+
+    if (active_timer[i]) {
+      stop_timer[i] = stop_timer[i] + diff;
+    }
   }
 
   Layer *window_layer = window_get_root_layer(window);
@@ -219,6 +230,9 @@ static void window_unload(Window *window) {
   }
 
   persist_write_int(PERSIST_KEY_ID_STOP_TIMER_FLAG, (int32_t) flag);
+
+  time_t now = time(NULL);
+  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME, (int32_t) now);
 
   tick_timer_service_unsubscribe();
 

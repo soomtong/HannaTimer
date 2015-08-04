@@ -20,6 +20,7 @@
 #define PERSIST_KEY_ID_STOP_TIMER_3 8
 #define PERSIST_KEY_ID_STOP_TIMER_4 9
 #define PERSIST_KEY_ID_STOP_TIMER_FLAG 10
+#define PERSIST_KEY_ID_STOP_TIMER_LAST_TIME 11
 
 enum CustomFonts {
     font_big = 0,
