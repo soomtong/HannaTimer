@@ -3,7 +3,7 @@
   "shortName": "HannaTimer",
   "longName": "HannaTimer",
   "companyName": "Soomtong",
-  "versionLabel": "2.2",
+  "versionLabel": "2.3",
   "sdkVersion": "3",
   "targetPlatforms": ["basalt"],
   "watchapp": {

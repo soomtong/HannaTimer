@@ -166,36 +166,37 @@ static void click_config_provider(void *context) {
 }
 
 static void window_load(Window *window) {
-  uint8_t flag = 0;
-  time_t now = 0, diff = 0;
+  int flag = 0;
+  time_t now = 0, saved = 0, diff = 0;
 
-  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_COUNTER)) {
-    pick_counter = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_COUNTER);
-  }
-  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_0)) {
-    stop_timer[0] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_0);
-  }
-  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_1)) {
-    stop_timer[1] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_1);
-  }
-  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_2)) {
-    stop_timer[2] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_2);
-  }
-  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_3)) {
-    stop_timer[3] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_3);
-  }
-  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_4)) {
-    stop_timer[4] = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_4);
-  }
-  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_FLAG)) {
-    flag = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_FLAG);
+  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER)) {
+    persist_read_data(PERSIST_KEY_ID_STOP_TIMER, &stop_timer, sizeof(stop_timer));
   }
 
   if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME)) {
     now = time(NULL);
+    persist_read_data(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME, &saved, sizeof(saved));
 
-    diff = now - (time_t) persist_read_int(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME);
+    diff = now - saved;   // diff = (time_t) difftime(saved, now);
   }
+
+  if (persist_exists(PERSIST_KEY_ID_STOP_TIMER_FLAG)) {
+    flag = persist_read_int(PERSIST_KEY_ID_STOP_TIMER_FLAG);
+  }
+
+  if (persist_exists(PERSIST_KEY_ID_STOP_PICK_COUNTER)) {
+    pick_counter = (uint8_t) persist_read_int(PERSIST_KEY_ID_STOP_PICK_COUNTER);
+  }
+
+/*
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "saved flag: %d", flag);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "diff time: %d", (int) diff);
+
+  for (int j = 0; j < STOP_TIMER_SIZE; ++j) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "saved time: %d", (int) stop_timer[j]);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "saved stat: %d", (int) active_timer[j]);
+  }
+*/
 
   // load flag bit
   // 31 = 11111
@@ -229,25 +230,19 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
-  persist_write_int(PERSIST_KEY_ID_STOP_PICK_COUNTER, (int32_t)pick_counter);
-
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_0, (int32_t)stop_timer[0]);
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_1, (int32_t)stop_timer[1]);
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_2, (int32_t)stop_timer[2]);
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_3, (int32_t)stop_timer[3]);
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_4, (int32_t)stop_timer[4]);
-
   // save flag bit
-  uint8_t flag = 0;
+  int flag = 0;
 
   for (int i = 0; i < STOP_TIMER_SIZE; ++i) {
-    if (active_timer[i]) flag = flag + (uint8_t)(1 << i);
+    if (active_timer[i]) flag = flag + (1 << i);
   }
 
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_FLAG, (int32_t) flag);
-
   time_t now = time(NULL);
-  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME, (int32_t) now);
+
+  persist_write_data(PERSIST_KEY_ID_STOP_TIMER, &stop_timer, sizeof(stop_timer));
+  persist_write_data(PERSIST_KEY_ID_STOP_TIMER_LAST_TIME, &now, sizeof(now));
+  persist_write_int(PERSIST_KEY_ID_STOP_TIMER_FLAG, flag);
+  persist_write_int(PERSIST_KEY_ID_STOP_PICK_COUNTER, (int32_t)pick_counter);
 
   tick_timer_service_unsubscribe();
 
